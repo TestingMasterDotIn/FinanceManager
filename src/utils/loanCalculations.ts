@@ -34,6 +34,24 @@ export interface EMIScheduleItem {
   prepayment?: number
 }
 
+export interface UserEarnings {
+  id?: string
+  user_id: string
+  monthly_earnings: number
+  updated_at?: string
+}
+
+export interface LoanAnalytics {
+  loanId: string
+  loanType: string
+  totalPrincipal: number
+  totalInterest: number
+  monthlyEMI: number
+  remainingPrincipal: number
+  paidPrincipal: number
+  paidInterest: number
+}
+
 export const calculateEMI = (principal: number, rate: number, tenure: number): number => {
   const monthlyRate = rate / 100 / 12
   const emi = (principal * monthlyRate * Math.pow(1 + monthlyRate, tenure)) / 
@@ -133,4 +151,52 @@ Total monthly EMI: ₹${totalEMI.toLocaleString()}, Total outstanding: ₹${(tot
 ${extraAmount > 0 ? `I can pay ₹${extraAmount.toLocaleString()} extra monthly.` : ''} 
 Please suggest an optimal debt repayment strategy to minimize total interest paid and become debt-free faster. 
 Consider loan snowball vs avalanche methods and provide a month-by-month action plan.`
+}
+
+export const calculateLoanAnalytics = (loan: LoanData): LoanAnalytics => {
+  const schedule = generateEMISchedule(loan)
+  const totalInterest = calculateTotalInterest(schedule)
+  
+  // Calculate how much has been paid based on start date
+  const startDate = new Date(loan.start_date)
+  const currentDate = new Date()
+  const monthsPassed = Math.max(0, 
+    (currentDate.getFullYear() - startDate.getFullYear()) * 12 + 
+    (currentDate.getMonth() - startDate.getMonth())
+  )
+  
+  let paidPrincipal = 0
+  let paidInterest = 0
+  let remainingPrincipal = loan.principal
+  
+  for (let i = 0; i < Math.min(monthsPassed, schedule.length); i++) {
+    paidPrincipal += schedule[i].principal
+    paidInterest += schedule[i].interest
+    remainingPrincipal = schedule[i].balance
+  }
+  
+  return {
+    loanId: loan.id,
+    loanType: loan.loan_type,
+    totalPrincipal: loan.principal,
+    totalInterest,
+    monthlyEMI: loan.emi_amount,
+    remainingPrincipal,
+    paidPrincipal,
+    paidInterest
+  }
+}
+
+export const calculateCombinedAnalytics = (loans: LoanData[]) => {
+  const analytics = loans.map(calculateLoanAnalytics)
+  
+  return {
+    totalPrincipal: analytics.reduce((sum, a) => sum + a.totalPrincipal, 0),
+    totalInterest: analytics.reduce((sum, a) => sum + a.totalInterest, 0),
+    totalMonthlyEMI: analytics.reduce((sum, a) => sum + a.monthlyEMI, 0),
+    totalRemainingPrincipal: analytics.reduce((sum, a) => sum + a.remainingPrincipal, 0),
+    totalPaidPrincipal: analytics.reduce((sum, a) => sum + a.paidPrincipal, 0),
+    totalPaidInterest: analytics.reduce((sum, a) => sum + a.paidInterest, 0),
+    individualAnalytics: analytics
+  }
 }
