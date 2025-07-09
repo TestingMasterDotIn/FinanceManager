@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { PlusIcon, ChartBarIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, ChartBarIcon, SparklesIcon, CalculatorIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { Button } from '../components/ui/Button'
@@ -9,6 +9,7 @@ import { LoanCard } from '../components/dashboard/LoanCard'
 import { LoanForm } from '../components/dashboard/LoanForm'
 import { AnalyticsChart } from '../components/dashboard/AnalyticsChart'
 import { AIAssistant } from '../components/dashboard/AIAssistant'
+import { LoanSimulator } from '../components/dashboard/LoanSimulator'
 import { LoanData } from '../utils/loanCalculations'
 
 export const Dashboard: React.FC = () => {
@@ -17,15 +18,9 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingLoan, setEditingLoan] = useState<LoanData | undefined>()
-  const [activeTab, setActiveTab] = useState<'loans' | 'analytics' | 'ai'>('loans')
+  const [activeTab, setActiveTab] = useState<'loans' | 'analytics' | 'ai' | 'simulator'>('loans')
 
-  useEffect(() => {
-    if (user) {
-      fetchLoans()
-    }
-  }, [user])
-
-  const fetchLoans = async () => {
+  const fetchLoans = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('loans')
@@ -40,7 +35,13 @@ export const Dashboard: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user?.id])
+
+  useEffect(() => {
+    if (user) {
+      fetchLoans()
+    }
+  }, [user, fetchLoans])
 
   const handleAddLoan = async (loanData: Omit<LoanData, 'id' | 'user_id'>) => {
     try {
@@ -83,6 +84,11 @@ export const Dashboard: React.FC = () => {
     }
   }
 
+  const handleEditClick = (loan: LoanData) => {
+    setEditingLoan(loan)
+    setIsFormOpen(true)
+  }
+
   const handleDeleteLoan = async (id: string) => {
     try {
       const { error } = await supabase
@@ -114,6 +120,7 @@ export const Dashboard: React.FC = () => {
   const tabs = [
     { id: 'loans', label: 'My Loans', icon: PlusIcon },
     { id: 'analytics', label: 'Analytics', icon: ChartBarIcon },
+    { id: 'simulator', label: 'Loan Simulator', icon: CalculatorIcon },
     { id: 'ai', label: 'AI Assistant', icon: SparklesIcon }
   ]
 
@@ -179,7 +186,7 @@ export const Dashboard: React.FC = () => {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id as 'loans' | 'analytics' | 'ai' | 'simulator')}
                   className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -222,16 +229,31 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {loans.map((loan) => (
-                    <LoanCard
-                      key={loan.id}
-                      loan={loan}
-                      onEdit={setEditingLoan}
-                      onDelete={handleDeleteLoan}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {loans.map((loan) => (
+                      <LoanCard
+                        key={loan.id}
+                        loan={loan}
+                        onEdit={handleEditClick}
+                        onDelete={handleDeleteLoan}
+                      />
+                    ))}
+                  </div>
+                  <Card className="mt-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center space-x-3">
+                      <CalculatorIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                      <div>
+                        <h4 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                          Want to run loan simulations?
+                        </h4>
+                        <p className="text-blue-700 dark:text-blue-300">
+                          Use the <strong>Loan Simulator</strong> tab to test prepayment scenarios, interest rate changes, and see how much you can save!
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                </>
               )}
             </div>
           )}
@@ -265,6 +287,12 @@ export const Dashboard: React.FC = () => {
                 AI Debt Optimization
               </h2>
               <AIAssistant loans={loans} />
+            </div>
+          )}
+
+          {activeTab === 'simulator' && (
+            <div className="space-y-6">
+              <LoanSimulator loans={loans} />
             </div>
           )}
         </motion.div>

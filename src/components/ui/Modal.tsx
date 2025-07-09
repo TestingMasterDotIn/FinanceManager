@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, ArrowsPointingOutIcon, ArrowsPointingInIcon } from '@heroicons/react/24/outline'
 
 interface ModalProps {
   isOpen: boolean
@@ -8,6 +8,7 @@ interface ModalProps {
   title: string
   children: React.ReactNode
   size?: 'sm' | 'md' | 'lg' | 'xl'
+  allowMaximize?: boolean
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -15,13 +16,23 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
-  size = 'md'
+  size = 'md',
+  allowMaximize = false
 }) => {
+  const [isMaximized, setIsMaximized] = useState(false)
+  
   const sizes = {
     sm: 'max-w-md',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl'
+  }
+
+  const getModalSize = () => {
+    if (isMaximized) {
+      return 'max-w-[95vw] min-h-[90vh]'
+    }
+    return sizes[size]
   }
 
   return (
@@ -41,21 +52,35 @@ export const Modal: React.FC<ModalProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className={`relative w-full ${sizes[size]} bg-white dark:bg-gray-800 rounded-xl shadow-xl`}
+              className={`relative w-full ${getModalSize()} bg-white dark:bg-gray-800 rounded-xl shadow-xl ${isMaximized ? 'h-[90vh] flex flex-col' : ''}`}
             >
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {title}
                 </h3>
-                <button
-                  onClick={onClose}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
+                <div className="flex items-center space-x-2">
+                  {allowMaximize && (
+                    <button
+                      onClick={() => setIsMaximized(!isMaximized)}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    >
+                      {isMaximized ? (
+                        <ArrowsPointingInIcon className="h-5 w-5" />
+                      ) : (
+                        <ArrowsPointingOutIcon className="h-5 w-5" />
+                      )}
+                    </button>
+                  )}
+                  <button
+                    onClick={onClose}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  >
+                    <XMarkIcon className="h-6 w-6" />
+                  </button>
+                </div>
               </div>
               
-              <div className="p-6">
+              <div className={`p-6 ${isMaximized ? 'flex-1 overflow-y-auto' : ''}`}>
                 {children}
               </div>
             </motion.div>

@@ -1,5 +1,4 @@
 import React from 'react'
-import { motion } from 'framer-motion'
 import { PencilIcon, TrashIcon, BanknotesIcon } from '@heroicons/react/24/outline'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
