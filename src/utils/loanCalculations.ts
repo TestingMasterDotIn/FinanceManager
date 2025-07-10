@@ -52,6 +52,33 @@ export interface LoanAnalytics {
   paidInterest: number
 }
 
+export interface SimulationResult {
+  originalSchedule: EMIScheduleItem[]
+  newSchedule: EMIScheduleItem[]
+  interestSaved: number
+  monthsSaved: number
+  newDebtFreeDate: string
+  newEMI?: number
+}
+
+export interface SavedSimulation {
+  id: string
+  user_id: string
+  loan_id: string
+  simulation_name: string
+  description?: string
+  original_schedule: EMIScheduleItem[]
+  new_schedule: EMIScheduleItem[]
+  interest_saved: number
+  months_saved: number
+  new_debt_free_date: string
+  new_emi?: number
+  prepayments?: PrepaymentData[]
+  rate_changes?: RateChangeData[]
+  created_at: string
+  updated_at: string
+}
+
 export const calculateEMI = (principal: number, rate: number, tenure: number): number => {
   const monthlyRate = rate / 100 / 12
   const emi = (principal * monthlyRate * Math.pow(1 + monthlyRate, tenure)) / 
