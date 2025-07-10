@@ -17,16 +17,26 @@ export const useTheme = () => {
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isDark, setIsDark] = useState(() => {
+    // Check localStorage first, then default to dark mode
     const saved = localStorage.getItem('theme')
-    return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    if (saved) {
+      return saved === 'dark'
+    }
+    // Default to dark mode
+    return true
   })
 
   useEffect(() => {
+    // Apply theme immediately on mount and changes
     localStorage.setItem('theme', isDark ? 'dark' : 'light')
+    
+    // Apply to document element - this is what Tailwind uses
     if (isDark) {
       document.documentElement.classList.add('dark')
+      document.documentElement.setAttribute('data-theme', 'dark')
     } else {
       document.documentElement.classList.remove('dark')
+      document.documentElement.setAttribute('data-theme', 'light')
     }
   }, [isDark])
 
