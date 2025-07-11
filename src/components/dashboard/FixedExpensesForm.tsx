@@ -181,9 +181,9 @@ export const FixedExpensesForm: React.FC<FixedExpensesFormProps> = ({ onExpenses
           <Button 
             onClick={handleAddExpense}
             disabled={!newExpense.name.trim() || !newExpense.amount.trim() || isLoading}
-            className="w-full md:w-auto"
+            className="w-full md:w-auto flex items-center whitespace-nowrap"
           >
-            <PlusIcon className="h-4 w-4 mr-2" />
+            <PlusIcon className="h-5 w-5 mr-2 flex-shrink-0" />
             Add Expense
           </Button>
         </div>

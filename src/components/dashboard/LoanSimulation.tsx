@@ -549,8 +549,8 @@ export const LoanSimulation: React.FC<LoanSimulationProps> = ({ loan, isOpen, on
                 )}
               </div>
               <div className="mt-4">
-                <Button onClick={handleAddPrepayment} disabled={isLoading}>
-                  <PlusIcon className="h-4 w-4 mr-2" />
+                <Button onClick={handleAddPrepayment} disabled={isLoading} className="flex items-center whitespace-nowrap">
+                  <PlusIcon className="h-5 w-5 mr-2 flex-shrink-0" />
                   Add Prepayment
                 </Button>
               </div>
@@ -616,8 +616,8 @@ export const LoanSimulation: React.FC<LoanSimulationProps> = ({ loan, isOpen, on
                 />
               </div>
               <div className="mt-4">
-                <Button onClick={handleAddRateChange} disabled={isLoading}>
-                  <PlusIcon className="h-4 w-4 mr-2" />
+                <Button onClick={handleAddRateChange} disabled={isLoading} className="flex items-center whitespace-nowrap">
+                  <PlusIcon className="h-5 w-5 mr-2 flex-shrink-0" />
                   Add Rate Change
                 </Button>
               </div>

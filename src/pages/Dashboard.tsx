@@ -124,20 +124,6 @@ export const Dashboard: React.FC = () => {
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0
-    }).format(amount)
-  }
-
-  const totalPrincipal = loans.reduce((sum, loan) => sum + loan.principal, 0)
-  const totalEMI = loans.reduce((sum, loan) => sum + loan.emi_amount, 0)
-  const avgInterestRate = loans.length > 0 
-    ? loans.reduce((sum, loan) => sum + loan.interest_rate, 0) / loans.length 
-    : 0
-
   const tabs = [
     { id: 'loans', label: 'My Loans', icon: PlusIcon },
     { id: 'expenses', label: 'Fixed Expenses', icon: CurrencyRupeeIcon },
@@ -175,7 +161,7 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 Total Outstanding
@@ -200,7 +186,7 @@ export const Dashboard: React.FC = () => {
                 {avgInterestRate.toFixed(2)}%
               </p>
             </Card>
-          </div>
+          </div> */}
 
           {/* Tabs */}
           <div className="border-b border-gray-200 dark:border-gray-700 mb-8">
@@ -229,8 +215,8 @@ export const Dashboard: React.FC = () => {
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                   Your Loans
                 </h2>
-                <Button onClick={() => setIsFormOpen(true)}>
-                  <PlusIcon className="h-5 w-5 mr-2" />
+                <Button onClick={() => setIsFormOpen(true)} className="flex items-center whitespace-nowrap">
+                  <PlusIcon className="h-5 w-5 mr-2 flex-shrink-0" />
                   Add New Loan
                 </Button>
               </div>
