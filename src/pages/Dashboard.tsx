@@ -1,24 +1,28 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { PlusIcon, ChartBarIcon, SparklesIcon, CalculatorIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, ChartBarIcon, SparklesIcon, CalculatorIcon, CurrencyRupeeIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { LoanCard } from '../components/dashboard/LoanCard'
 import { LoanForm } from '../components/dashboard/LoanForm'
-import { AnalyticsChart } from '../components/dashboard/AnalyticsChart'
+import { DashboardChart } from '../components/dashboard/DashboardChart'
 import { AIAssistant } from '../components/dashboard/AIAssistant'
 import { LoanSimulator } from '../components/dashboard/LoanSimulator'
-import { LoanData } from '../utils/loanCalculations'
+import { FixedExpensesForm } from '../components/dashboard/FixedExpensesForm'
+import { ExportDropdown } from '../components/dashboard/ExportDropdown'
+import { LoanData, FixedExpense, UserEarnings } from '../utils/loanCalculations'
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth()
   const [loans, setLoans] = useState<LoanData[]>([])
+  const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([])
+  const [earnings, setEarnings] = useState<UserEarnings | null>(null)
   const [loading, setLoading] = useState(true)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingLoan, setEditingLoan] = useState<LoanData | undefined>()
-  const [activeTab, setActiveTab] = useState<'loans' | 'analytics' | 'ai' | 'simulator'>('loans')
+  const [activeTab, setActiveTab] = useState<'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator'>('loans')
 
   const fetchLoans = useCallback(async () => {
     try {
@@ -37,11 +41,28 @@ export const Dashboard: React.FC = () => {
     }
   }, [user?.id])
 
+  const fetchEarnings = useCallback(async () => {
+    if (!user) return
+    try {
+      const { data, error } = await supabase
+        .from('user_earnings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      if (error && error.code !== 'PGRST116') throw error
+      setEarnings(data || null)
+    } catch (error) {
+      console.error('Error fetching earnings:', error)
+    }
+  }, [user])
+
   useEffect(() => {
     if (user) {
       fetchLoans()
+      fetchEarnings()
     }
-  }, [user, fetchLoans])
+  }, [user, fetchLoans, fetchEarnings])
 
   const handleAddLoan = async (loanData: Omit<LoanData, 'id' | 'user_id'>) => {
     try {
@@ -119,7 +140,8 @@ export const Dashboard: React.FC = () => {
 
   const tabs = [
     { id: 'loans', label: 'My Loans', icon: PlusIcon },
-    { id: 'analytics', label: 'Analytics', icon: ChartBarIcon },
+    { id: 'expenses', label: 'Fixed Expenses', icon: CurrencyRupeeIcon },
+    { id: 'dashboard', label: 'Dashboard', icon: ChartBarIcon },
     { id: 'simulator', label: 'Loan Simulator', icon: CalculatorIcon },
     { id: 'ai', label: 'AI Assistant', icon: SparklesIcon }
   ]
@@ -186,7 +208,7 @@ export const Dashboard: React.FC = () => {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as 'loans' | 'analytics' | 'ai' | 'simulator')}
+                  onClick={() => setActiveTab(tab.id as 'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator')}
                   className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -258,11 +280,32 @@ export const Dashboard: React.FC = () => {
             </div>
           )}
 
-          {activeTab === 'analytics' && (
+          {activeTab === 'expenses' && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Analytics Dashboard
+                Fixed Monthly Expenses
               </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Track your monthly fixed expenses like rent, utilities, subscriptions, and other regular payments. This helps you understand your monthly financial commitments alongside your loan EMIs.
+              </p>
+              <FixedExpensesForm onExpensesChange={setFixedExpenses} />
+            </div>
+          )}
+
+          {activeTab === 'dashboard' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Financial Dashboard
+                </h2>
+                {loans.length > 0 && (
+                  <ExportDropdown 
+                    loans={loans} 
+                    fixedExpenses={fixedExpenses} 
+                    earnings={earnings}
+                  />
+                )}
+              </div>
               {loans.length === 0 ? (
                 <Card>
                   <div className="text-center py-12">
@@ -276,7 +319,12 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </Card>
               ) : (
-                <AnalyticsChart loans={loans} />
+                <DashboardChart 
+                  loans={loans} 
+                  fixedExpenses={fixedExpenses}
+                  userEarnings={earnings}
+                  onEarningsUpdate={setEarnings}
+                />
               )}
             </div>
           )}
@@ -286,7 +334,7 @@ export const Dashboard: React.FC = () => {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 AI Debt Optimization
               </h2>
-              <AIAssistant loans={loans} />
+              <AIAssistant />
             </div>
           )}
 

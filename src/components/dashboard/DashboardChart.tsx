@@ -1,78 +1,56 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts'
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
-import { LoanData, calculateLoanAnalytics, calculateCombinedAnalytics, UserEarnings } from '../../utils/loanCalculations'
+import { LoanData, calculateLoanAnalytics, calculateCombinedAnalytics, UserEarnings, FixedExpense } from '../../utils/loanCalculations'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 
-interface AnalyticsChartProps {
+interface DashboardChartProps {
   loans: LoanData[]
+  fixedExpenses?: FixedExpense[]
+  userEarnings: UserEarnings | null
+  onEarningsUpdate: (earnings: UserEarnings) => void
 }
 
 const COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899']
 
-export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ loans }) => {
+export const DashboardChart: React.FC<DashboardChartProps> = ({ 
+  loans, 
+  fixedExpenses = [],
+  userEarnings,
+  onEarningsUpdate
+}) => {
   const { user } = useAuth()
-  const [earnings, setEarnings] = useState<UserEarnings | null>(null)
   const [isEditingEarnings, setIsEditingEarnings] = useState(false)
   const [newEarnings, setNewEarnings] = useState('')
 
-  useEffect(() => {
-    const fetchEarnings = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('user_earnings')
-          .select('*')
-          .eq('user_id', user?.id)
-          .single()
-
-        if (error && error.code !== 'PGRST116') throw error
-        setEarnings(data || null)
-      } catch (error) {
-        console.error('Error fetching earnings:', error)
-      }
-    }
-
-    if (user) {
-      fetchEarnings()
-    }
-  }, [user])
-
-  const handleSaveEarnings = async () => {
+  const updateEarnings = async () => {
     if (!user || !newEarnings) return
 
     try {
-      const earningsData = {
-        user_id: user.id,
-        monthly_earnings: parseFloat(newEarnings)
+      const { error } = await supabase
+        .from('user_earnings')
+        .upsert({
+          user_id: user.id,
+          monthly_earnings: parseFloat(newEarnings)
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      const newEarningsData = {
+        monthly_earnings: parseFloat(newEarnings),
+        user_id: user.id
       }
-
-      if (earnings) {
-        const { data, error } = await supabase
-          .from('user_earnings')
-          .update({ monthly_earnings: parseFloat(newEarnings) })
-          .eq('user_id', user.id)
-          .select()
-
-        if (error) throw error
-        setEarnings(data[0])
-      } else {
-        const { data, error } = await supabase
-          .from('user_earnings')
-          .insert([earningsData])
-          .select()
-
-        if (error) throw error
-        setEarnings(data[0])
-      }
-
+      onEarningsUpdate(newEarningsData)
       setIsEditingEarnings(false)
       setNewEarnings('')
     } catch (error) {
-      console.error('Error saving earnings:', error)
+      console.error('Error updating earnings:', error)
     }
   }
 
@@ -91,6 +69,69 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ loans }) => {
   // Calculate analytics for all loans
   const combinedAnalytics = calculateCombinedAnalytics(loans)
   const loanAnalytics = loans.map(calculateLoanAnalytics)
+
+  // Calculate totals
+  const totalEMI = loans.reduce((sum, loan) => sum + loan.emi_amount, 0)
+  const totalFixedExpenses = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0)
+  const monthlyIncome = userEarnings?.monthly_earnings || 0
+  const totalMonthlyCommitments = totalEMI + totalFixedExpenses
+  const remainingIncome = monthlyIncome - totalMonthlyCommitments
+
+  // Income vs Expenses breakdown data
+  const incomeBreakdownData = [
+    {
+      name: 'Loan EMIs',
+      value: totalEMI,
+      color: '#EF4444',
+      percentage: monthlyIncome > 0 ? (totalEMI / monthlyIncome) * 100 : 0
+    },
+    {
+      name: 'Fixed Expenses',
+      value: totalFixedExpenses,
+      color: '#F59E0B',
+      percentage: monthlyIncome > 0 ? (totalFixedExpenses / monthlyIncome) * 100 : 0
+    },
+    {
+      name: 'Available Income',
+      value: Math.max(0, remainingIncome),
+      color: '#10B981',
+      percentage: monthlyIncome > 0 ? Math.max(0, (remainingIncome / monthlyIncome) * 100) : 0
+    }
+  ]
+
+  // Monthly cash flow comparison data
+  const cashFlowData = [
+    {
+      category: 'Monthly Income',
+      amount: monthlyIncome,
+      color: '#10B981'
+    },
+    {
+      category: 'Loan EMIs',
+      amount: totalEMI,
+      color: '#EF4444'
+    },
+    {
+      category: 'Fixed Expenses',
+      amount: totalFixedExpenses,
+      color: '#F59E0B'
+    },
+    {
+      category: 'Remaining',
+      amount: Math.max(0, remainingIncome),
+      color: '#3B82F6'
+    }
+  ]
+
+  // Individual expense breakdown for bar chart
+  const expenseBreakdownData = [
+    { name: 'Loan EMIs', amount: totalEMI, color: '#EF4444' },
+    ...fixedExpenses.map((exp, index) => ({
+      name: exp.expense_name,
+      amount: exp.amount,
+      color: COLORS[(index + 1) % COLORS.length]
+    }))
+  ]
 
   // Pie chart data for loan distribution
   const pieData = loans.map((loan, index) => ({
@@ -150,11 +191,11 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ loans }) => {
               size="sm"
               onClick={() => {
                 setIsEditingEarnings(true)
-                setNewEarnings(earnings?.monthly_earnings?.toString() || '')
+                setNewEarnings(userEarnings?.monthly_earnings?.toString() || '')
               }}
             >
               <PencilIcon className="h-4 w-4 mr-1" />
-              {earnings ? 'Edit' : 'Add'}
+              {userEarnings ? 'Edit' : 'Add'}
             </Button>
           )}
         </div>
@@ -168,7 +209,7 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ loans }) => {
               onChange={(e) => setNewEarnings(e.target.value)}
               className="flex-1"
             />
-            <Button size="sm" onClick={handleSaveEarnings}>
+            <Button size="sm" onClick={updateEarnings}>
               <CheckIcon className="h-4 w-4" />
             </Button>
             <Button
@@ -186,11 +227,11 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ loans }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {earnings ? formatCurrency(earnings.monthly_earnings) : 'Not set'}
+                {userEarnings ? formatCurrency(userEarnings.monthly_earnings) : 'Not set'}
               </p>
               <p className="text-sm text-gray-600 dark:text-gray-400">Monthly Earnings</p>
             </div>
-            {earnings && (
+            {userEarnings && (
               <>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
@@ -200,7 +241,7 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ loans }) => {
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    {formatPercentage((combinedAnalytics.totalMonthlyEMI / earnings.monthly_earnings) * 100)}
+                    {formatPercentage((combinedAnalytics.totalMonthlyEMI / userEarnings.monthly_earnings) * 100)}
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">EMI vs Earnings</p>
                 </div>
@@ -209,6 +250,112 @@ export const AnalyticsChart: React.FC<AnalyticsChartProps> = ({ loans }) => {
           </div>
         )}
       </Card>
+
+      {/* Financial Overview Dashboard */}
+      {monthlyIncome > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Income vs Expenses Breakdown */}
+          <Card>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+              Monthly Income Breakdown
+            </h3>
+            <div className="mb-6">
+              <div className="grid grid-cols-3 gap-4 text-center mb-4">
+                <div>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {formatCurrency(monthlyIncome)}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Income</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {formatCurrency(totalMonthlyCommitments)}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Commitments</p>
+                </div>
+                <div>
+                  <p className={`text-2xl font-bold ${remainingIncome >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {formatCurrency(remainingIncome)}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {remainingIncome >= 0 ? 'Available' : 'Shortfall'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={incomeBreakdownData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {incomeBreakdownData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value) => [formatCurrency(value as number), 'Amount']}
+                  labelFormatter={(label) => `${label}`}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </Card>
+
+          {/* Cash Flow Comparison */}
+          <Card>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+              Monthly Cash Flow Analysis
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={cashFlowData} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`} />
+                <YAxis dataKey="category" type="category" width={100} />
+                <Tooltip formatter={(value) => [formatCurrency(value as number), 'Amount']} />
+                <Bar dataKey="amount">
+                  {cashFlowData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+        </div>
+      )}
+
+      {/* Detailed Expense Breakdown */}
+      {(totalEMI > 0 || totalFixedExpenses > 0) && (
+        <Card>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+            Expense Breakdown
+          </h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={expenseBreakdownData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="name" 
+                angle={-45}
+                textAnchor="end"
+                height={100}
+                fontSize={12}
+              />
+              <YAxis tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`} />
+              <Tooltip formatter={(value) => [formatCurrency(value as number), 'Amount']} />
+              <Bar dataKey="amount">
+                {expenseBreakdownData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
 
       {/* Combined Principal vs Interest Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

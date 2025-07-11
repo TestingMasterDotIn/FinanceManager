@@ -41,6 +41,16 @@ export interface UserEarnings {
   updated_at?: string
 }
 
+export interface FixedExpense {
+  id?: string
+  user_id: string
+  expense_name: string
+  amount: number
+  category?: string
+  created_at?: string
+  updated_at?: string
+}
+
 export interface LoanAnalytics {
   loanId: string
   loanType: string
