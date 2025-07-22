@@ -12,6 +12,9 @@ interface DashboardChartProps {
   loans: LoanData[]
   fixedExpenses?: FixedExpense[]
   userEarnings: UserEarnings | null
+  lendingBorrowingStats?: {
+    totalLentInterestEarned: number
+  }
   onEarningsUpdate: (earnings: UserEarnings) => void
 }
 
@@ -21,16 +24,21 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
   loans, 
   fixedExpenses = [],
   userEarnings,
+  lendingBorrowingStats,
   onEarningsUpdate
 }) => {
   const { user } = useAuth()
   const [isEditingEarnings, setIsEditingEarnings] = useState(false)
-  const [newEarnings, setNewEarnings] = useState('')
+  const [newSalary, setNewSalary] = useState('')
+  const [includeInterestEarnings, setIncludeInterestEarnings] = useState(false)
 
   const updateEarnings = async () => {
-    if (!user || !newEarnings) return
+    if (!user || !newSalary) return
 
     try {
+      const interestEarnings = includeInterestEarnings ? (lendingBorrowingStats?.totalLentInterestEarned || 0) : 0
+      const totalMonthlyEarnings = parseFloat(newSalary) + interestEarnings
+
       // Simple update approach - check if record exists first
       const { data: existingRecord } = await supabase
         .from('user_earnings')
@@ -43,7 +51,11 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
         // Record exists, update it
         result = await supabase
           .from('user_earnings')
-          .update({ monthly_earnings: parseFloat(newEarnings) })
+          .update({ 
+            monthly_earnings: totalMonthlyEarnings,
+            salary: parseFloat(newSalary),
+            include_interest_earnings: includeInterestEarnings
+          })
           .eq('user_id', user.id)
           .select()
           .single()
@@ -53,7 +65,9 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
           .from('user_earnings')
           .insert({
             user_id: user.id,
-            monthly_earnings: parseFloat(newEarnings)
+            monthly_earnings: totalMonthlyEarnings,
+            salary: parseFloat(newSalary),
+            include_interest_earnings: includeInterestEarnings
           })
           .select()
           .single()
@@ -65,12 +79,14 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
 
       // Update local state
       const newEarningsData = {
-        monthly_earnings: parseFloat(newEarnings),
+        monthly_earnings: totalMonthlyEarnings,
+        salary: parseFloat(newSalary),
+        include_interest_earnings: includeInterestEarnings,
         user_id: user.id
       }
       onEarningsUpdate(newEarningsData)
       setIsEditingEarnings(false)
-      setNewEarnings('')
+      setNewSalary('')
     } catch (error) {
       console.error('Error updating earnings:', error)
       // Show user-friendly error message
@@ -147,16 +163,6 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
     }
   ]
 
-  // Individual expense breakdown for bar chart
-  const expenseBreakdownData = [
-    { name: 'Loan EMIs', amount: totalEMI, color: '#EF4444' },
-    ...fixedExpenses.map((exp, index) => ({
-      name: exp.name, // Fixed: use 'name' instead of 'expense_name'
-      amount: exp.amount,
-      color: COLORS[(index + 1) % COLORS.length]
-    }))
-  ]
-
   // Pie chart data for loan distribution (using outstanding balance)
   const pieData = loans.map((loan, index) => ({
     name: loan.loan_type,
@@ -217,7 +223,8 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
               size="sm"
               onClick={() => {
                 setIsEditingEarnings(true)
-                setNewEarnings(userEarnings?.monthly_earnings?.toString() || '')
+                setNewSalary(userEarnings?.salary?.toString() || userEarnings?.monthly_earnings?.toString() || '')
+                setIncludeInterestEarnings(userEarnings?.include_interest_earnings || false)
               }}
             >
               <PencilIcon className="h-4 w-4 mr-1" />
@@ -227,35 +234,68 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
         </div>
         
         {isEditingEarnings ? (
-          <div className="flex items-center space-x-2">
-            <Input
-              type="number"
-              placeholder="Enter monthly earnings"
-              value={newEarnings}
-              onChange={(e) => setNewEarnings(e.target.value)}
-              className="flex-1"
-            />
-            <Button size="sm" onClick={updateEarnings}>
-              <CheckIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setIsEditingEarnings(false)
-                setNewEarnings('')
-              }}
-            >
-              <XMarkIcon className="h-4 w-4" />
-            </Button>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Base Salary
+              </label>
+              <Input
+                type="number"
+                placeholder="Enter base salary"
+                value={newSalary}
+                onChange={(e) => setNewSalary(e.target.value)}
+                className="flex-1"
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="includeInterest"
+                checked={includeInterestEarnings}
+                onChange={(e) => setIncludeInterestEarnings(e.target.checked)}
+                className="rounded border-gray-300 dark:border-gray-600 text-green-600 focus:ring-green-500"
+              />
+                                  <label htmlFor="includeInterest" className="text-sm text-gray-700 dark:text-gray-300">
+                      Include Monthly L&B Interest ({formatCurrency(lendingBorrowingStats?.totalLentInterestEarned || 0)}/month)
+                    </label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button size="sm" onClick={updateEarnings}>
+                <CheckIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsEditingEarnings(false)
+                  setNewSalary('')
+                  setIncludeInterestEarnings(false)
+                }}
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {userEarnings ? formatCurrency(userEarnings.monthly_earnings) : 'Not set'}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Monthly Earnings</p>
+              <div className="space-y-1">
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {userEarnings ? formatCurrency(userEarnings.monthly_earnings) : 'Not set'}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Monthly Income</p>
+                
+                {userEarnings?.salary && (
+                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    <div>Base Salary: {formatCurrency(userEarnings.salary)}</div>
+                    {userEarnings.include_interest_earnings && (
+                      <div>+ Monthly L&B Interest: {formatCurrency((userEarnings.monthly_earnings || 0) - userEarnings.salary)}</div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             {userEarnings && (
               <>

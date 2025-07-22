@@ -5,6 +5,7 @@ import {
   PlusIcon,
   UserIcon,
   CurrencyRupeeIcon,
+  CurrencyDollarIcon,
   CheckCircleIcon,
   ClockIcon,
   PencilIcon,
@@ -28,6 +29,7 @@ interface LentMoney {
   borrower_name: string
   borrower_contact?: string
   amount: number
+  outstanding_balance: number
   interest_rate: number
   lent_date: string
   expected_return_date?: string | null
@@ -44,6 +46,7 @@ interface BorrowedMoney {
   lender_name: string
   lender_contact?: string
   amount: number
+  outstanding_balance: number
   interest_rate: number
   borrowed_date: string
   expected_return_date?: string | null
@@ -88,6 +91,7 @@ export const LendingBorrowing: React.FC = () => {
     person_name: '',
     person_contact: '',
     amount: '',
+    outstanding_balance: '',
     interest_rate: '',
     date: '',
     expected_return_date: '',
@@ -103,6 +107,7 @@ export const LendingBorrowing: React.FC = () => {
       person_name: '',
       person_contact: '',
       amount: '',
+      outstanding_balance: '',
       interest_rate: '',
       date: '',
       expected_return_date: '',
@@ -572,7 +577,7 @@ export const LendingBorrowing: React.FC = () => {
                 <BanknotesIcon className="h-8 w-8 text-blue-600 mr-3" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Lent</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalLent)}</p>
+                  <p className="text-2xl font-bold text-gray-500">{formatCurrency(stats.totalLent)}</p>
                 </div>
               </div>
             </Card>

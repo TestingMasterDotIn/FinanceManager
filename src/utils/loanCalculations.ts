@@ -49,6 +49,8 @@ export interface FixedExpense {
 export interface UserEarnings {
   user_id: string
   monthly_earnings: number
+  salary?: number
+  include_interest_earnings?: boolean
   created_at?: string
   updated_at?: string
 }
@@ -59,8 +61,26 @@ export interface LentMoney {
   borrower_name: string
   borrower_contact?: string
   amount: number
+  outstanding_balance: number
   interest_rate: number
   lent_date: string
+  expected_return_date: string
+  paid_date?: string
+  is_paid: boolean
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface BorrowedMoney {
+  id: string
+  user_id: string
+  lender_name: string
+  lender_contact?: string
+  amount: number
+  outstanding_balance: number
+  interest_rate: number
+  borrowed_date: string
   expected_return_date: string
   paid_date?: string
   is_paid: boolean
@@ -272,4 +292,33 @@ export const calculateRemainingTenure = (loan: LoanData): number => {
   )
   
   return Math.max(0, remainingMonths)
+}
+
+// Calculate interest earned from lending activities
+export const calculateLendingBorrowingStats = (lentMoney: LentMoney[], borrowedMoney: BorrowedMoney[]) => {
+  // Calculate monthly interest earnings from current outstanding amounts
+  let totalMonthlyLentInterest = 0
+  let totalMonthlyBorrowedInterest = 0
+  
+  lentMoney.forEach(loan => {
+    if (!loan.is_paid && loan.outstanding_balance > 0) {
+      // Calculate monthly interest based on current outstanding balance
+      const monthlyInterestRate = loan.interest_rate / 100 / 12
+      totalMonthlyLentInterest += loan.outstanding_balance * monthlyInterestRate
+    }
+  })
+  
+  borrowedMoney.forEach(loan => {
+    if (!loan.is_paid && loan.outstanding_balance > 0) {
+      // Calculate monthly interest owed based on current outstanding balance
+      const monthlyInterestRate = loan.interest_rate / 100 / 12
+      totalMonthlyBorrowedInterest += loan.outstanding_balance * monthlyInterestRate
+    }
+  })
+  
+  return {
+    totalLentInterestEarned: Math.round(totalMonthlyLentInterest), // Monthly interest earned from lending
+    totalBorrowedInterestOwed: Math.round(totalMonthlyBorrowedInterest), // Monthly interest owed on borrowing
+    netInterestEarnings: Math.round(totalMonthlyLentInterest - totalMonthlyBorrowedInterest) // Net monthly interest
+  }
 }

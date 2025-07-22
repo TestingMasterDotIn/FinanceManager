@@ -25,13 +25,15 @@ import { InvestmentPortfolio } from '../components/dashboard/InvestmentPortfolio
 import { FinancialGoalsTracker } from '../components/dashboard/FinancialGoalsTracker'
 import { TaxPlanningModule } from '../components/dashboard/TaxPlanningModule'
 import { LendingBorrowing } from '../components/dashboard/LendingBorrowing'
-import { LoanData, FixedExpense, UserEarnings } from '../utils/loanCalculations'
+import { LoanData, FixedExpense, UserEarnings, LentMoney, BorrowedMoney, calculateLendingBorrowingStats } from '../utils/loanCalculations'
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth()
   const [loans, setLoans] = useState<LoanData[]>([])
   const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([])
   const [earnings, setEarnings] = useState<UserEarnings | null>(null)
+  const [lentMoney, setLentMoney] = useState<LentMoney[]>([])
+  const [borrowedMoney, setBorrowedMoney] = useState<BorrowedMoney[]>([])
   const [loading, setLoading] = useState(true)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingLoan, setEditingLoan] = useState<LoanData | undefined>()
@@ -70,12 +72,46 @@ export const Dashboard: React.FC = () => {
     }
   }, [user])
 
+  const fetchLentMoney = useCallback(async () => {
+    if (!user) return
+    try {
+      const { data, error } = await supabase
+        .from('lent_money')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('lent_date', { ascending: false })
+
+      if (error) throw error
+      setLentMoney(data || [])
+    } catch (error) {
+      console.error('Error fetching lent money:', error)
+    }
+  }, [user])
+
+  const fetchBorrowedMoney = useCallback(async () => {
+    if (!user) return
+    try {
+      const { data, error } = await supabase
+        .from('borrowed_money')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('borrowed_date', { ascending: false })
+
+      if (error) throw error
+      setBorrowedMoney(data || [])
+    } catch (error) {
+      console.error('Error fetching borrowed money:', error)
+    }
+  }, [user])
+
   useEffect(() => {
     if (user) {
       fetchLoans()
       fetchEarnings()
+      fetchLentMoney()
+      fetchBorrowedMoney()
     }
-  }, [user, fetchLoans, fetchEarnings])
+  }, [user, fetchLoans, fetchEarnings, fetchLentMoney, fetchBorrowedMoney])
 
   const handleAddLoan = async (loanData: Omit<LoanData, 'id' | 'user_id'>) => {
     try {
@@ -143,6 +179,9 @@ export const Dashboard: React.FC = () => {
   const avgInterestRate = loans.length > 0 
     ? loans.reduce((sum, loan) => sum + loan.interest_rate, 0) / loans.length 
     : 0
+
+  // Calculate L&B stats for the Monthly Earnings card
+  const lendingBorrowingStats = calculateLendingBorrowingStats(lentMoney, borrowedMoney)
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -345,6 +384,7 @@ export const Dashboard: React.FC = () => {
                   fixedExpenses={fixedExpenses}
                   userEarnings={earnings}
                   onEarningsUpdate={setEarnings}
+                  lendingBorrowingStats={lendingBorrowingStats}
                 />
               )}
             </div>
