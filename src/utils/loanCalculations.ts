@@ -2,6 +2,7 @@ export interface LoanData {
   id: string
   loan_type: string
   principal: number
+  outstanding_balance: number
   interest_rate: number
   tenure_months: number
   start_date: string
@@ -32,21 +33,6 @@ export interface EMIScheduleItem {
   interest: number
   balance: number
   prepayment?: number
-}
-
-export interface LoanData {
-  id: string
-  user_id: string
-  type: string
-  bank: string
-  amount: number
-  interestRate: number
-  tenure: number
-  emi: number
-  processingFee: number
-  startDate: string
-  created_at?: string
-  updated_at?: string
 }
 
 export interface FixedExpense {
@@ -234,14 +220,11 @@ export const calculateLoanAnalytics = (loan: LoanData): LoanAnalytics => {
     (currentDate.getMonth() - startDate.getMonth())
   )
   
-  let paidPrincipal = 0
   let paidInterest = 0
-  let remainingPrincipal = loan.principal
   
+  // Calculate paid interest from schedule up to months passed
   for (let i = 0; i < Math.min(monthsPassed, schedule.length); i++) {
-    paidPrincipal += schedule[i].principal
     paidInterest += schedule[i].interest
-    remainingPrincipal = schedule[i].balance
   }
   
   return {
@@ -250,9 +233,9 @@ export const calculateLoanAnalytics = (loan: LoanData): LoanAnalytics => {
     totalPrincipal: loan.principal,
     totalInterest,
     monthlyEMI: loan.emi_amount,
-    remainingPrincipal,
-    paidPrincipal,
-    paidInterest
+    remainingPrincipal: loan.outstanding_balance, // Use actual outstanding balance
+    paidPrincipal: loan.principal - loan.outstanding_balance, // Calculate from actual values
+    paidInterest // Interest paid based on schedule
   }
 }
 
@@ -268,4 +251,25 @@ export const calculateCombinedAnalytics = (loans: LoanData[]) => {
     totalPaidInterest: analytics.reduce((sum, a) => sum + a.paidInterest, 0),
     individualAnalytics: analytics
   }
+}
+
+// Calculate remaining tenure for a loan based on current outstanding balance
+export const calculateRemainingTenure = (loan: LoanData): number => {
+  if (loan.outstanding_balance <= 0) return 0
+  
+  // Simple estimation: remaining_balance / (emi - monthly_interest)
+  const monthlyInterestRate = loan.interest_rate / 100 / 12
+  const monthlyInterest = loan.outstanding_balance * monthlyInterestRate
+  const principalPayment = loan.emi_amount - monthlyInterest
+  
+  if (principalPayment <= 0) return loan.tenure_months // If EMI doesn't cover interest
+  
+  // More accurate calculation using loan formula
+  const monthlyRate = loan.interest_rate / 100 / 12
+  const remainingMonths = Math.ceil(
+    Math.log(1 + (loan.outstanding_balance * monthlyRate) / loan.emi_amount) / 
+    Math.log(1 + monthlyRate)
+  )
+  
+  return Math.max(0, remainingMonths)
 }

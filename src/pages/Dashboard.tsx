@@ -137,6 +137,21 @@ export const Dashboard: React.FC = () => {
     }
   }
 
+  // Calculate summary metrics
+  const totalOutstanding = loans.reduce((sum, loan) => sum + loan.outstanding_balance, 0)
+  const totalEMI = loans.reduce((sum, loan) => sum + loan.emi_amount, 0)
+  const avgInterestRate = loans.length > 0 
+    ? loans.reduce((sum, loan) => sum + loan.interest_rate, 0) / loans.length 
+    : 0
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0
+    }).format(amount)
+  }
+
   const tabs = [
     { id: 'loans', label: 'My Loans', icon: PlusIcon },
     { id: 'expenses', label: 'Fixed Expenses', icon: CurrencyRupeeIcon },
@@ -179,32 +194,34 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Summary Cards */}
-          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Total Outstanding
-              </h3>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {formatCurrency(totalPrincipal)}
-              </p>
-            </Card>
-            <Card>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Monthly EMI
-              </h3>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {formatCurrency(totalEMI)}
-              </p>
-            </Card>
-            <Card>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Average Interest Rate
-              </h3>
-              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                {avgInterestRate.toFixed(2)}%
-              </p>
-            </Card>
-          </div> */}
+          {loans.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <Card>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Total Outstanding
+                </h3>
+                <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                  {formatCurrency(totalOutstanding)}
+                </p>
+              </Card>
+              <Card>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Monthly EMI
+                </h3>
+                <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                  {formatCurrency(totalEMI)}
+                </p>
+              </Card>
+              <Card>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Average Interest Rate
+                </h3>
+                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                  {avgInterestRate.toFixed(2)}%
+                </p>
+              </Card>
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="border-b border-gray-200 dark:border-gray-700 mb-8">

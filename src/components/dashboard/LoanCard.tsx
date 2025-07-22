@@ -2,7 +2,7 @@ import React from 'react'
 import { PencilIcon, TrashIcon, BanknotesIcon } from '@heroicons/react/24/outline'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
-import { LoanData } from '../../utils/loanCalculations'
+import { LoanData, calculateLoanAnalytics } from '../../utils/loanCalculations'
 
 interface LoanCardProps {
   loan: LoanData
@@ -31,6 +31,9 @@ export const LoanCard: React.FC<LoanCardProps> = ({ loan, onEdit, onDelete }) =>
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
     }
   }
+
+  // Calculate loan analytics to get paid interest
+  const loanAnalytics = calculateLoanAnalytics(loan)
 
   return (
     <Card hover className="relative">
@@ -77,6 +80,12 @@ export const LoanCard: React.FC<LoanCardProps> = ({ loan, onEdit, onDelete }) =>
           </p>
         </div>
         <div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Current Outstanding</p>
+          <p className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+            {formatCurrency(loan.outstanding_balance)}
+          </p>
+        </div>
+        <div>
           <p className="text-sm text-gray-600 dark:text-gray-400">Interest Rate</p>
           <p className="text-lg font-semibold text-gray-900 dark:text-white">
             {loan.interest_rate}%
@@ -88,10 +97,31 @@ export const LoanCard: React.FC<LoanCardProps> = ({ loan, onEdit, onDelete }) =>
             {formatCurrency(loan.emi_amount)}
           </p>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <p className="text-sm text-gray-600 dark:text-gray-400">Tenure</p>
           <p className="text-lg font-semibold text-gray-900 dark:text-white">
             {loan.tenure_months} months
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Interest Paid (till date)</p>
+          <p className="text-lg font-semibold text-red-600 dark:text-red-400">
+            {formatCurrency(loanAnalytics.paidInterest)}
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Principal Paid</p>
+          <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+            {formatCurrency(loan.principal - loan.outstanding_balance)}
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Total Interest (till loan tenure)</p>
+          <p className="text-lg font-semibold text-red-600 dark:text-red-400">
+            {formatCurrency(loanAnalytics.totalInterest)}
           </p>
         </div>
       </div>

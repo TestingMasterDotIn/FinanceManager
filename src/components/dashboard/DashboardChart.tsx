@@ -4,7 +4,7 @@ import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
-import { LoanData, calculateLoanAnalytics, calculateCombinedAnalytics, UserEarnings, FixedExpense } from '../../utils/loanCalculations'
+import { LoanData, calculateLoanAnalytics, calculateCombinedAnalytics, calculateRemainingTenure, UserEarnings, FixedExpense } from '../../utils/loanCalculations'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -151,16 +151,16 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
   const expenseBreakdownData = [
     { name: 'Loan EMIs', amount: totalEMI, color: '#EF4444' },
     ...fixedExpenses.map((exp, index) => ({
-      name: exp.expense_name,
+      name: exp.name, // Fixed: use 'name' instead of 'expense_name'
       amount: exp.amount,
       color: COLORS[(index + 1) % COLORS.length]
     }))
   ]
 
-  // Pie chart data for loan distribution
+  // Pie chart data for loan distribution (using outstanding balance)
   const pieData = loans.map((loan, index) => ({
     name: loan.loan_type,
-    value: loan.principal,
+    value: loan.outstanding_balance, // Use outstanding balance instead of principal
     color: COLORS[index % COLORS.length]
   }))
 
@@ -171,6 +171,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
     interest: analytics.paidInterest,
     remainingPrincipal: analytics.remainingPrincipal,
     totalInterest: analytics.totalInterest,
+    remainingTenure: calculateRemainingTenure(loans[index]), // Add remaining tenure
     color: COLORS[index % COLORS.length]
   }))
 
@@ -197,7 +198,8 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
   const lineData = loans.map((loan) => ({
     name: loan.loan_type,
     emi: loan.emi_amount,
-    principal: loan.principal,
+    principal: loan.outstanding_balance, // Use outstanding balance for current view
+    totalPrincipal: loan.principal, // Keep original for reference
     rate: loan.interest_rate
   }))
 
@@ -274,6 +276,41 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
           </div>
         )}
       </Card>
+
+      {/* Loan Portfolio Summary */}
+      {loans.length > 0 && (
+        <Card>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+            Loan Portfolio Summary
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                {formatCurrency(combinedAnalytics.totalRemainingPrincipal)}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Outstanding</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {formatCurrency(combinedAnalytics.totalPaidPrincipal)}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Principal Paid</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                {formatCurrency(combinedAnalytics.totalPaidInterest)}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Interest Paid</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {formatPercentage((combinedAnalytics.totalPaidPrincipal / combinedAnalytics.totalPrincipal) * 100)}
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Completion %</p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Financial Overview Dashboard */}
       {monthlyIncome > 0 && (
@@ -354,7 +391,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
       )}
 
       {/* Detailed Expense Breakdown */}
-      {(totalEMI > 0 || totalFixedExpenses > 0) && (
+      {/* {(totalEMI > 0 || totalFixedExpenses > 0) && (
         <Card>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
             Expense Breakdown
@@ -379,7 +416,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
             </BarChart>
           </ResponsiveContainer>
         </Card>
-      )}
+      )} */}
 
       {/* Combined Principal vs Interest Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

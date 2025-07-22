@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
@@ -17,6 +16,7 @@ export const LoanForm: React.FC<LoanFormProps> = ({ isOpen, onClose, onSubmit, l
   const [formData, setFormData] = useState({
     loan_type: '',
     principal: '',
+    outstanding_balance: '',
     interest_rate: '',
     tenure_months: '',
     start_date: '',
@@ -37,6 +37,7 @@ export const LoanForm: React.FC<LoanFormProps> = ({ isOpen, onClose, onSubmit, l
       setFormData({
         loan_type: loan.loan_type,
         principal: loan.principal.toString(),
+        outstanding_balance: loan.outstanding_balance.toString(),
         interest_rate: loan.interest_rate.toString(),
         tenure_months: loan.tenure_months.toString(),
         start_date: loan.start_date,
@@ -46,6 +47,7 @@ export const LoanForm: React.FC<LoanFormProps> = ({ isOpen, onClose, onSubmit, l
       setFormData({
         loan_type: '',
         principal: '',
+        outstanding_balance: '',
         interest_rate: '',
         tenure_months: '',
         start_date: '',
@@ -72,6 +74,7 @@ export const LoanForm: React.FC<LoanFormProps> = ({ isOpen, onClose, onSubmit, l
     onSubmit({
       loan_type: formData.loan_type,
       principal: parseFloat(formData.principal),
+      outstanding_balance: parseFloat(formData.outstanding_balance || formData.principal),
       interest_rate: parseFloat(formData.interest_rate),
       tenure_months: parseInt(formData.tenure_months),
       start_date: formData.start_date,
@@ -113,6 +116,17 @@ export const LoanForm: React.FC<LoanFormProps> = ({ isOpen, onClose, onSubmit, l
             required
             min={1}
             step={1}
+          />
+          
+          <Input
+            label="Current Outstanding Balance (₹)"
+            type="number"
+            value={formData.outstanding_balance}
+            onChange={(e) => setFormData(prev => ({ ...prev, outstanding_balance: e.target.value }))}
+            required
+            min={0}
+            step={1}
+            placeholder="Current outstanding balance"
           />
           
           <Input

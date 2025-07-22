@@ -80,6 +80,9 @@ export const LendingBorrowing: React.FC = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isInterestCalendarOpen, setIsInterestCalendarOpen] = useState(false)
   const [selectedLoanForInterest, setSelectedLoanForInterest] = useState<LentMoney | BorrowedMoney | null>(null)
+  const [isBalanceUpdateOpen, setIsBalanceUpdateOpen] = useState(false)
+  const [selectedLoanForBalance, setSelectedLoanForBalance] = useState<LentMoney | BorrowedMoney | null>(null)
+  const [balanceUpdateAmount, setBalanceUpdateAmount] = useState('')
   
   const [formData, setFormData] = useState({
     person_name: '',
@@ -266,6 +269,7 @@ export const LendingBorrowing: React.FC = () => {
           lender_name: formData.person_name,
           lender_contact: formData.person_contact,
           amount: parseFloat(formData.amount),
+          outstanding_balance: parseFloat(formData.outstanding_balance || formData.amount),
           interest_rate: parseFloat(formData.interest_rate),
           borrowed_date: formData.date,
           expected_return_date: formData.expected_return_date || null,
@@ -321,6 +325,7 @@ export const LendingBorrowing: React.FC = () => {
         person_name: loan.borrower_name,
         person_contact: loan.borrower_contact || '',
         amount: loan.amount.toString(),
+        outstanding_balance: loan.outstanding_balance.toString(),
         interest_rate: loan.interest_rate.toString(),
         date: loan.lent_date,
         expected_return_date: loan.expected_return_date || '',
@@ -332,6 +337,7 @@ export const LendingBorrowing: React.FC = () => {
         person_name: loan.lender_name,
         person_contact: loan.lender_contact || '',
         amount: loan.amount.toString(),
+        outstanding_balance: loan.outstanding_balance.toString(),
         interest_rate: loan.interest_rate.toString(),
         date: loan.borrowed_date,
         expected_return_date: loan.expected_return_date || '',
@@ -431,6 +437,48 @@ export const LendingBorrowing: React.FC = () => {
     }
   }
 
+  const handleBalanceUpdate = async () => {
+    if (!selectedLoanForBalance || !balanceUpdateAmount) return
+
+    try {
+      const newBalance = parseFloat(balanceUpdateAmount)
+      const tableName = 'borrower_name' in selectedLoanForBalance ? 'lent_money' : 'borrowed_money'
+      
+      const { error } = await supabase
+        .from(tableName)
+        .update({
+          outstanding_balance: newBalance,
+          is_paid: newBalance === 0,
+          paid_date: newBalance === 0 ? new Date().toISOString().split('T')[0] : null
+        })
+        .eq('id', selectedLoanForBalance.id)
+
+      if (error) throw error
+      
+      // Update local state
+      if ('borrower_name' in selectedLoanForBalance) {
+        setLentMoney(prev => prev.map(loan => 
+          loan.id === selectedLoanForBalance.id 
+            ? { ...loan, outstanding_balance: newBalance, is_paid: newBalance === 0, paid_date: newBalance === 0 ? new Date().toISOString().split('T')[0] : loan.paid_date }
+            : loan
+        ))
+      } else {
+        setBorrowedMoney(prev => prev.map(loan => 
+          loan.id === selectedLoanForBalance.id 
+            ? { ...loan, outstanding_balance: newBalance, is_paid: newBalance === 0, paid_date: newBalance === 0 ? new Date().toISOString().split('T')[0] : loan.paid_date }
+            : loan
+        ))
+      }
+      
+      setIsBalanceUpdateOpen(false)
+      setSelectedLoanForBalance(null)
+      setBalanceUpdateAmount('')
+    } catch (error) {
+      console.error('Error updating outstanding balance:', error)
+      alert('Failed to update outstanding balance. Please try again.')
+    }
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -464,12 +512,12 @@ export const LendingBorrowing: React.FC = () => {
   const getTotalStats = () => {
     const totalLent = lentMoney.reduce((sum, loan) => sum + loan.amount, 0)
     const totalLentPaid = lentMoney.filter(loan => loan.is_paid).reduce((sum, loan) => sum + loan.amount, 0)
-    const totalLentPending = totalLent - totalLentPaid
+    const totalLentPending = lentMoney.filter(loan => !loan.is_paid).reduce((sum, loan) => sum + loan.outstanding_balance, 0)
     const totalLentInterestEarned = lentMoney.reduce((sum, loan) => sum + calculateTotalInterestEarned(loan.id, 'lent'), 0)
     
     const totalBorrowed = borrowedMoney.reduce((sum, loan) => sum + loan.amount, 0)
     const totalBorrowedPaid = borrowedMoney.filter(loan => loan.is_paid).reduce((sum, loan) => sum + loan.amount, 0)
-    const totalBorrowedPending = totalBorrowed - totalBorrowedPaid
+    const totalBorrowedPending = borrowedMoney.filter(loan => !loan.is_paid).reduce((sum, loan) => sum + loan.outstanding_balance, 0)
     const totalBorrowedInterestPaid = borrowedMoney.reduce((sum, loan) => sum + calculateTotalInterestEarned(loan.id, 'borrowed'), 0)
     
     return { 
@@ -673,9 +721,12 @@ export const LendingBorrowing: React.FC = () => {
                               <ExclamationTriangleIcon className="h-5 w-5 ml-2 text-red-500" />
                             )}
                           </h4>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm text-gray-600">
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-2 text-sm text-gray-600">
                             <div>
                               <span className="font-medium">Amount:</span> {formatCurrency(loan.amount)}
+                            </div>
+                            <div>
+                              <span className="font-medium">Outstanding:</span> {formatCurrency(loan.outstanding_balance)}
                             </div>
                             <div>
                               <span className="font-medium">Interest:</span> {loan.interest_rate}% p.a.
@@ -724,6 +775,17 @@ export const LendingBorrowing: React.FC = () => {
                     </div>
                     
                     <div className="flex items-center space-x-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedLoanForBalance(loan)
+                          setBalanceUpdateAmount(loan.outstanding_balance.toString())
+                          setIsBalanceUpdateOpen(true)
+                        }}
+                      >
+                        <CurrencyDollarIcon className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -824,8 +886,28 @@ export const LendingBorrowing: React.FC = () => {
                 type="number"
                 step={0.01}
                 value={formData.amount}
-                onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                onChange={(e) => {
+                  setFormData({...formData, amount: e.target.value})
+                  // Auto-set outstanding balance to amount if not editing
+                  if (!editingLoan && !formData.outstanding_balance) {
+                    setFormData(prev => ({...prev, amount: e.target.value, outstanding_balance: e.target.value}))
+                  }
+                }}
                 placeholder="Enter amount"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Outstanding Balance *
+              </label>
+              <Input
+                type="number"
+                step={0.01}
+                value={formData.outstanding_balance}
+                onChange={(e) => setFormData({...formData, outstanding_balance: e.target.value})}
+                placeholder="Current outstanding balance"
                 required
               />
             </div>
@@ -928,8 +1010,12 @@ export const LendingBorrowing: React.FC = () => {
                 )}
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">Amount</h4>
+                <h4 className="font-semibold text-gray-900">Original Amount</h4>
                 <p className="text-2xl font-bold text-blue-600">{formatCurrency(viewingLoan.amount)}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900">Outstanding Balance</h4>
+                <p className="text-xl font-bold text-orange-600">{formatCurrency(viewingLoan.outstanding_balance)}</p>
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900">Interest Rate</h4>
@@ -1007,8 +1093,9 @@ export const LendingBorrowing: React.FC = () => {
               </h4>
               <p className="text-blue-700">
                 Amount: {formatCurrency(selectedLoanForInterest.amount)} | 
+                Outstanding: {formatCurrency(selectedLoanForInterest.outstanding_balance)} | 
                 Interest: {selectedLoanForInterest.interest_rate}% p.a. | 
-                Monthly: {formatCurrency((selectedLoanForInterest.amount * selectedLoanForInterest.interest_rate) / (12 * 100))}
+                Monthly: {formatCurrency((selectedLoanForInterest.outstanding_balance * selectedLoanForInterest.interest_rate) / (12 * 100))}
               </p>
             </div>
             
@@ -1102,6 +1189,74 @@ export const LendingBorrowing: React.FC = () => {
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Balance Update Modal */}
+      <Modal
+        isOpen={isBalanceUpdateOpen}
+        onClose={() => {
+          setIsBalanceUpdateOpen(false)
+          setSelectedLoanForBalance(null)
+          setBalanceUpdateAmount('')
+        }}
+        title="Update Outstanding Balance"
+      >
+        {selectedLoanForBalance && (
+          <div className="space-y-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-semibold text-blue-900">
+                {activeSection === 'lent' ? 'Money Lent to' : 'Money Borrowed from'}: {' '}
+                {'borrower_name' in selectedLoanForBalance 
+                  ? selectedLoanForBalance.borrower_name 
+                  : selectedLoanForBalance.lender_name
+                }
+              </h4>
+              <p className="text-blue-700">
+                Original Amount: {formatCurrency(selectedLoanForBalance.amount)} | 
+                Current Outstanding: {formatCurrency(selectedLoanForBalance.outstanding_balance)}
+              </p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                New Outstanding Balance *
+              </label>
+              <Input
+                type="number"
+                step={0.01}
+                value={balanceUpdateAmount}
+                onChange={(e) => setBalanceUpdateAmount(e.target.value)}
+                placeholder="Enter new outstanding balance"
+                required
+              />
+              <p className="text-sm text-gray-600 mt-1">
+                Enter 0 to mark as fully paid, or any amount between 0 and {formatCurrency(selectedLoanForBalance.amount)}
+              </p>
+            </div>
+            
+            <div className="flex space-x-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsBalanceUpdateOpen(false)
+                  setSelectedLoanForBalance(null)
+                  setBalanceUpdateAmount('')
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleBalanceUpdate} 
+                className="flex-1"
+                disabled={!balanceUpdateAmount || parseFloat(balanceUpdateAmount) < 0 || parseFloat(balanceUpdateAmount) > selectedLoanForBalance.amount}
+              >
+                Update Balance
+              </Button>
             </div>
           </div>
         )}
