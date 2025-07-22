@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { PlusIcon, ChartBarIcon, SparklesIcon, CalculatorIcon, CurrencyRupeeIcon } from '@heroicons/react/24/outline'
+import { 
+  PlusIcon, 
+  ChartBarIcon, 
+  SparklesIcon, 
+  CalculatorIcon, 
+  CurrencyRupeeIcon,
+  CreditCardIcon,
+  BanknotesIcon,
+  TrophyIcon,
+  DocumentTextIcon
+} from '@heroicons/react/24/outline'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { Button } from '../components/ui/Button'
@@ -12,6 +22,10 @@ import { AIAssistant } from '../components/dashboard/AIAssistant'
 import { LoanSimulator } from '../components/dashboard/LoanSimulator'
 import { FixedExpensesForm } from '../components/dashboard/FixedExpensesForm'
 import { ExportDropdown } from '../components/dashboard/ExportDropdown'
+import { CreditScoreMonitor } from '../components/dashboard/CreditScoreMonitor'
+import { InvestmentPortfolio } from '../components/dashboard/InvestmentPortfolio'
+import { FinancialGoalsTracker } from '../components/dashboard/FinancialGoalsTracker'
+import { TaxPlanningModule } from '../components/dashboard/TaxPlanningModule'
 import { LoanData, FixedExpense, UserEarnings } from '../utils/loanCalculations'
 
 export const Dashboard: React.FC = () => {
@@ -22,7 +36,7 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingLoan, setEditingLoan] = useState<LoanData | undefined>()
-  const [activeTab, setActiveTab] = useState<'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator'>('loans')
+  const [activeTab, setActiveTab] = useState<'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax'>('loans')
 
   const fetchLoans = useCallback(async () => {
     try {
@@ -129,6 +143,10 @@ export const Dashboard: React.FC = () => {
     { id: 'expenses', label: 'Fixed Expenses', icon: CurrencyRupeeIcon },
     { id: 'dashboard', label: 'Dashboard', icon: ChartBarIcon },
     { id: 'simulator', label: 'Loan Simulator', icon: CalculatorIcon },
+    // { id: 'credit', label: 'Credit Score', icon: CreditCardIcon },
+    // { id: 'investments', label: 'Investments', icon: BanknotesIcon },
+    // { id: 'goals', label: 'Financial Goals', icon: TrophyIcon },
+    { id: 'tax', label: 'Tax Planning', icon: DocumentTextIcon },
     { id: 'ai', label: 'AI Assistant', icon: SparklesIcon }
   ]
 
@@ -153,11 +171,11 @@ export const Dashboard: React.FC = () => {
         >
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome back!
+              Welcome To LoanMaster!
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            {/* <p className="text-gray-600 dark:text-gray-400">
               Here's your loan portfolio overview
-            </p>
+            </p> */}
           </div>
 
           {/* Summary Cards */}
@@ -194,7 +212,7 @@ export const Dashboard: React.FC = () => {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as 'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator')}
+                  onClick={() => setActiveTab(tab.id as 'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax')}
                   className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -327,6 +345,54 @@ export const Dashboard: React.FC = () => {
           {activeTab === 'simulator' && (
             <div className="space-y-6">
               <LoanSimulator loans={loans} />
+            </div>
+          )}
+
+          {activeTab === 'credit' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Credit Score Monitoring
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Track your credit score, understand the factors affecting it, and get recommendations to improve your creditworthiness.
+              </p>
+              <CreditScoreMonitor />
+            </div>
+          )}
+
+          {activeTab === 'investments' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Investment Portfolio
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Manage your investment portfolio, track returns, and optimize your SIPs for better financial growth.
+              </p>
+              <InvestmentPortfolio />
+            </div>
+          )}
+
+          {activeTab === 'goals' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Financial Goals Tracker
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Set and track your financial goals, monitor progress, and get personalized recommendations to achieve them faster.
+              </p>
+              <FinancialGoalsTracker />
+            </div>
+          )}
+
+          {activeTab === 'tax' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Tax Planning & Optimization
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Calculate your tax liability, optimize deductions, and get personalized tax-saving investment recommendations.
+              </p>
+              <TaxPlanningModule />
             </div>
           )}
         </motion.div>

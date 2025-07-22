@@ -31,17 +31,39 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
     if (!user || !newEarnings) return
 
     try {
-      const { error } = await supabase
+      // Simple update approach - check if record exists first
+      const { data: existingRecord } = await supabase
         .from('user_earnings')
-        .upsert({
-          user_id: user.id,
-          monthly_earnings: parseFloat(newEarnings)
-        })
-        .select()
-        .single()
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle()
 
-      if (error) throw error
+      let result
+      if (existingRecord) {
+        // Record exists, update it
+        result = await supabase
+          .from('user_earnings')
+          .update({ monthly_earnings: parseFloat(newEarnings) })
+          .eq('user_id', user.id)
+          .select()
+          .single()
+      } else {
+        // Record doesn't exist, insert new one
+        result = await supabase
+          .from('user_earnings')
+          .insert({
+            user_id: user.id,
+            monthly_earnings: parseFloat(newEarnings)
+          })
+          .select()
+          .single()
+      }
 
+      if (result.error) {
+        throw result.error
+      }
+
+      // Update local state
       const newEarningsData = {
         monthly_earnings: parseFloat(newEarnings),
         user_id: user.id
@@ -51,6 +73,8 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
       setNewEarnings('')
     } catch (error) {
       console.error('Error updating earnings:', error)
+      // Show user-friendly error message
+      alert('Failed to update earnings. Please try again.')
     }
   }
 
