@@ -6,9 +6,7 @@ import {
   SparklesIcon, 
   CalculatorIcon, 
   CurrencyRupeeIcon,
-  CreditCardIcon,
   BanknotesIcon,
-  TrophyIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../hooks/useAuth'
@@ -26,6 +24,7 @@ import { CreditScoreMonitor } from '../components/dashboard/CreditScoreMonitor'
 import { InvestmentPortfolio } from '../components/dashboard/InvestmentPortfolio'
 import { FinancialGoalsTracker } from '../components/dashboard/FinancialGoalsTracker'
 import { TaxPlanningModule } from '../components/dashboard/TaxPlanningModule'
+import { LendingBorrowing } from '../components/dashboard/LendingBorrowing'
 import { LoanData, FixedExpense, UserEarnings } from '../utils/loanCalculations'
 
 export const Dashboard: React.FC = () => {
@@ -36,7 +35,7 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingLoan, setEditingLoan] = useState<LoanData | undefined>()
-  const [activeTab, setActiveTab] = useState<'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax'>('loans')
+  const [activeTab, setActiveTab] = useState<'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax' | 'lending-borrowing'>('loans')
 
   const fetchLoans = useCallback(async () => {
     try {
@@ -143,6 +142,7 @@ export const Dashboard: React.FC = () => {
     { id: 'expenses', label: 'Fixed Expenses', icon: CurrencyRupeeIcon },
     { id: 'dashboard', label: 'Dashboard', icon: ChartBarIcon },
     { id: 'simulator', label: 'Loan Simulator', icon: CalculatorIcon },
+    { id: 'lending-borrowing', label: 'L&B', icon: BanknotesIcon },
     // { id: 'credit', label: 'Credit Score', icon: CreditCardIcon },
     // { id: 'investments', label: 'Investments', icon: BanknotesIcon },
     // { id: 'goals', label: 'Financial Goals', icon: TrophyIcon },
@@ -212,7 +212,7 @@ export const Dashboard: React.FC = () => {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as 'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax')}
+                  onClick={() => setActiveTab(tab.id as 'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax' | 'lending-borrowing')}
                   className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -345,6 +345,12 @@ export const Dashboard: React.FC = () => {
           {activeTab === 'simulator' && (
             <div className="space-y-6">
               <LoanSimulator loans={loans} />
+            </div>
+          )}
+
+          {activeTab === 'lending-borrowing' && (
+            <div className="space-y-6">
+              <LendingBorrowing />
             </div>
           )}
 

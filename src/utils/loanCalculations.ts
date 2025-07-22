@@ -34,21 +34,53 @@ export interface EMIScheduleItem {
   prepayment?: number
 }
 
-export interface UserEarnings {
-  id?: string
+export interface LoanData {
+  id: string
   user_id: string
-  monthly_earnings: number
+  type: string
+  bank: string
+  amount: number
+  interestRate: number
+  tenure: number
+  emi: number
+  processingFee: number
+  startDate: string
+  created_at?: string
   updated_at?: string
 }
 
 export interface FixedExpense {
-  id?: string
+  id: string
   user_id: string
-  expense_name: string
+  category: string
+  name: string
   amount: number
-  category?: string
+  frequency: 'monthly' | 'weekly' | 'daily'
   created_at?: string
   updated_at?: string
+}
+
+export interface UserEarnings {
+  user_id: string
+  monthly_earnings: number
+  created_at?: string
+  updated_at?: string
+}
+
+export interface LentMoney {
+  id: string
+  user_id: string
+  borrower_name: string
+  borrower_contact?: string
+  amount: number
+  interest_rate: number
+  lent_date: string
+  expected_return_date: string
+  paid_date?: string
+  is_paid: boolean
+  notes?: string
+  created_at: string
+  updated_at: string
 }
 
 export interface LoanAnalytics {
