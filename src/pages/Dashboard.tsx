@@ -9,6 +9,7 @@ import {
   BanknotesIcon,
   DocumentTextIcon,
   UserIcon,
+  UserGroupIcon,
   EyeIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../hooks/useAuth'
@@ -29,6 +30,7 @@ import { FinancialGoalsTracker } from '../components/dashboard/FinancialGoalsTra
 import { TaxPlanningModule } from '../components/dashboard/TaxPlanningModule'
 import { LendingBorrowing } from '../components/dashboard/LendingBorrowing'
 import { PersonalExpenses } from '../components/dashboard/PersonalExpenses'
+import { ChitFund } from '../components/dashboard/ChitFund'
 import { LoanData, FixedExpense, UserEarnings, LentMoney, BorrowedMoney, calculateLendingBorrowingStats, calculateLoanAnalytics } from '../utils/loanCalculations'
 
 export const Dashboard: React.FC = () => {
@@ -44,7 +46,7 @@ export const Dashboard: React.FC = () => {
   const [showBreakdownModal, setShowBreakdownModal] = useState(false)
   const [showEMIBreakdownModal, setShowEMIBreakdownModal] = useState(false)
   const [showInterestBreakdownModal, setShowInterestBreakdownModal] = useState(false)
-  const [activeTab, setActiveTab] = useState<'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax' | 'lending-borrowing' | 'personal-expenses'>('loans')
+  const [activeTab, setActiveTab] = useState<'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax' | 'lending-borrowing' | 'personal-expenses' | 'chits'>('loans')
 
   const fetchLoans = useCallback(async () => {
     try {
@@ -273,6 +275,7 @@ export const Dashboard: React.FC = () => {
     { id: 'dashboard', label: 'Dashboard', icon: ChartBarIcon },
     { id: 'simulator', label: 'Loan Simulator', icon: CalculatorIcon },
     { id: 'lending-borrowing', label: 'L&B', icon: BanknotesIcon },
+    { id: 'chits', label: 'Chits', icon: UserGroupIcon },
     // { id: 'credit', label: 'Credit Score', icon: CreditCardIcon },
     // { id: 'investments', label: 'Investments', icon: BanknotesIcon },
     // { id: 'goals', label: 'Financial Goals', icon: TrophyIcon },
@@ -371,7 +374,7 @@ export const Dashboard: React.FC = () => {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as 'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax' | 'lending-borrowing' | 'personal-expenses')}
+                  onClick={() => setActiveTab(tab.id as 'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax' | 'lending-borrowing' | 'personal-expenses' | 'chits')}
                   className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -517,6 +520,12 @@ export const Dashboard: React.FC = () => {
           {activeTab === 'lending-borrowing' && (
             <div className="space-y-6">
               <LendingBorrowing />
+            </div>
+          )}
+
+          {activeTab === 'chits' && (
+            <div className="space-y-6">
+              <ChitFund />
             </div>
           )}
 
