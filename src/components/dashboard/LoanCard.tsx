@@ -44,8 +44,13 @@ export const LoanCard: React.FC<LoanCardProps> = ({ loan, onEdit, onDelete }) =>
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {loan.loan_type}
+              {loan.custom_name || loan.loan_type}
             </h3>
+            {loan.custom_name && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {loan.loan_type}
+              </p>
+            )}
             <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getLoanTypeColor(loan.loan_type)}`}>
               {loan.loan_type}
             </span>

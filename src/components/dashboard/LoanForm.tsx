@@ -15,6 +15,7 @@ interface LoanFormProps {
 export const LoanForm: React.FC<LoanFormProps> = ({ isOpen, onClose, onSubmit, loan }) => {
   const [formData, setFormData] = useState({
     loan_type: '',
+    custom_name: '',
     principal: '',
     outstanding_balance: '',
     interest_rate: '',
@@ -36,6 +37,7 @@ export const LoanForm: React.FC<LoanFormProps> = ({ isOpen, onClose, onSubmit, l
     if (loan) {
       setFormData({
         loan_type: loan.loan_type,
+        custom_name: loan.custom_name || '',
         principal: loan.principal.toString(),
         outstanding_balance: loan.outstanding_balance.toString(),
         interest_rate: loan.interest_rate.toString(),
@@ -46,6 +48,7 @@ export const LoanForm: React.FC<LoanFormProps> = ({ isOpen, onClose, onSubmit, l
     } else {
       setFormData({
         loan_type: '',
+        custom_name: '',
         principal: '',
         outstanding_balance: '',
         interest_rate: '',
@@ -73,6 +76,7 @@ export const LoanForm: React.FC<LoanFormProps> = ({ isOpen, onClose, onSubmit, l
     e.preventDefault()
     onSubmit({
       loan_type: formData.loan_type,
+      custom_name: formData.custom_name || undefined,
       principal: parseFloat(formData.principal),
       outstanding_balance: parseFloat(formData.outstanding_balance || formData.principal),
       interest_rate: parseFloat(formData.interest_rate),
@@ -106,6 +110,14 @@ export const LoanForm: React.FC<LoanFormProps> = ({ isOpen, onClose, onSubmit, l
             onChange={(e) => setFormData(prev => ({ ...prev, loan_type: e.target.value }))}
             options={loanTypes}
             required
+          />
+          
+          <Input
+            label="Custom Name (Optional)"
+            type="text"
+            value={formData.custom_name}
+            onChange={(e) => setFormData(prev => ({ ...prev, custom_name: e.target.value }))}
+            placeholder="e.g., Main House, Investment Property, Primary Car"
           />
           
           <Input

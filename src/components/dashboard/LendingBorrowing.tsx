@@ -233,6 +233,7 @@ export const LendingBorrowing: React.FC = () => {
           borrower_name: formData.person_name,
           borrower_contact: formData.person_contact,
           amount: parseFloat(formData.amount),
+          outstanding_balance: parseFloat(formData.outstanding_balance || formData.amount),
           interest_rate: parseFloat(formData.interest_rate),
           lent_date: formData.date,
           expected_return_date: formData.expected_return_date || null,
@@ -788,6 +789,7 @@ export const LendingBorrowing: React.FC = () => {
                           setBalanceUpdateAmount(loan.outstanding_balance.toString())
                           setIsBalanceUpdateOpen(true)
                         }}
+                        title="Update Outstanding Balance"
                       >
                         <CurrencyDollarIcon className="h-4 w-4" />
                       </Button>
@@ -798,6 +800,7 @@ export const LendingBorrowing: React.FC = () => {
                           setSelectedLoanForInterest(loan)
                           setIsInterestCalendarOpen(true)
                         }}
+                        title="View Interest Payment Schedule"
                       >
                         <CalendarIcon className="h-4 w-4" />
                       </Button>
@@ -808,6 +811,7 @@ export const LendingBorrowing: React.FC = () => {
                           setViewingLoan(loan)
                           setIsViewModalOpen(true)
                         }}
+                        title="View Loan Details"
                       >
                         <EyeIcon className="h-4 w-4" />
                       </Button>
@@ -815,14 +819,16 @@ export const LendingBorrowing: React.FC = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => handleEdit(loan)}
+                        title="Edit Loan"
                       >
-                        <PencilIcon className="h-4 w-4" />
+                        <PencilIcon className="h-4 w-4"/>
                       </Button>
                       <Button
                         variant={loan.is_paid ? "outline" : "primary"}
                         size="sm"
                         onClick={() => handleMarkPaid(loan)}
                         className={loan.is_paid ? "text-orange-600" : "bg-green-600 hover:bg-green-700"}
+                        title={loan.is_paid ? 'Mark as Unpaid' : 'Mark as Paid'}
                       >
                         {loan.is_paid ? 'Mark Unpaid' : 'Mark Paid'}
                       </Button>
@@ -831,6 +837,7 @@ export const LendingBorrowing: React.FC = () => {
                         size="sm"
                         onClick={() => handleDelete(loan)}
                         className="text-red-600 hover:bg-red-50"
+                        title="Delete Loan"
                       >
                         <TrashIcon className="h-4 w-4" />
                       </Button>
@@ -892,11 +899,13 @@ export const LendingBorrowing: React.FC = () => {
                 step={0.01}
                 value={formData.amount}
                 onChange={(e) => {
-                  setFormData({...formData, amount: e.target.value})
-                  // Auto-set outstanding balance to amount if not editing
-                  if (!editingLoan && !formData.outstanding_balance) {
-                    setFormData(prev => ({...prev, amount: e.target.value, outstanding_balance: e.target.value}))
-                  }
+                  const newAmount = e.target.value
+                  setFormData(prev => ({
+                    ...prev, 
+                    amount: newAmount,
+                    // Auto-set outstanding balance to amount if not editing and outstanding balance is empty
+                    outstanding_balance: !editingLoan && (!prev.outstanding_balance || prev.outstanding_balance === '') ? newAmount : prev.outstanding_balance
+                  }))
                 }}
                 placeholder="Enter amount"
                 required
@@ -977,10 +986,15 @@ export const LendingBorrowing: React.FC = () => {
                 resetForm()
               }}
               className="flex-1"
+              title="Cancel and close form"
             >
               Cancel
             </Button>
-            <Button type="submit" className="flex-1">
+            <Button 
+              type="submit" 
+              className="flex-1"
+              title={editingLoan ? 'Update the loan record with new information' : 'Add new loan record to your portfolio'}
+            >
               {editingLoan ? 'Update Record' : 'Add Record'}
             </Button>
           </div>
@@ -1111,6 +1125,7 @@ export const LendingBorrowing: React.FC = () => {
                   <Button
                     onClick={() => generateInterestSchedule(selectedLoanForInterest)}
                     className="flex items-center space-x-2"
+                    title="Generate monthly interest payment schedule for this loan"
                   >
                     <CalendarIcon className="h-4 w-4" />
                     <span>Generate Payment Schedule</span>
@@ -1160,6 +1175,7 @@ export const LendingBorrowing: React.FC = () => {
                               size="sm"
                               onClick={() => markInterestPayment(payment.id, !payment.is_paid)}
                               className={payment.is_paid ? "text-orange-600" : "bg-green-600 hover:bg-green-700"}
+                              title={payment.is_paid ? 'Mark Interest Payment as Unpaid' : 'Mark Interest Payment as Paid'}
                             >
                               {payment.is_paid ? 'Mark Unpaid' : 'Mark Paid'}
                             </Button>
@@ -1252,6 +1268,7 @@ export const LendingBorrowing: React.FC = () => {
                   setBalanceUpdateAmount('')
                 }}
                 className="flex-1"
+                title="Cancel balance update"
               >
                 Cancel
               </Button>
@@ -1259,6 +1276,7 @@ export const LendingBorrowing: React.FC = () => {
                 onClick={handleBalanceUpdate} 
                 className="flex-1"
                 disabled={!balanceUpdateAmount || parseFloat(balanceUpdateAmount) < 0 || parseFloat(balanceUpdateAmount) > selectedLoanForBalance.amount}
+                title="Update the outstanding balance for this loan"
               >
                 Update Balance
               </Button>

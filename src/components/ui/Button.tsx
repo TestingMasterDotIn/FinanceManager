@@ -1,5 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
+import { Tooltip } from './Tooltip'
 
 interface ButtonProps {
   children: React.ReactNode
@@ -9,6 +10,7 @@ interface ButtonProps {
   disabled?: boolean
   className?: string
   type?: 'button' | 'submit' | 'reset'
+  title?: string
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -18,7 +20,8 @@ export const Button: React.FC<ButtonProps> = ({
   onClick,
   disabled,
   className = '',
-  type = 'button'
+  type = 'button',
+  title
 }) => {
   const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2'
   
@@ -37,7 +40,7 @@ export const Button: React.FC<ButtonProps> = ({
   
   const disabledClasses = disabled ? 'opacity-50 cursor-not-allowed' : ''
   
-  return (
+  const button = (
     <motion.button
       whileHover={{ scale: disabled ? 1 : 1.02 }}
       whileTap={{ scale: disabled ? 1 : 0.98 }}
@@ -49,4 +52,14 @@ export const Button: React.FC<ButtonProps> = ({
       {children}
     </motion.button>
   )
+
+  if (title) {
+    return (
+      <Tooltip content={title} disabled={disabled}>
+        {button}
+      </Tooltip>
+    )
+  }
+
+  return button
 }

@@ -7,12 +7,15 @@ import {
   CalculatorIcon, 
   CurrencyRupeeIcon,
   BanknotesIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  UserIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { Modal } from '../components/ui/Modal'
 import { LoanCard } from '../components/dashboard/LoanCard'
 import { LoanForm } from '../components/dashboard/LoanForm'
 import { DashboardChart } from '../components/dashboard/DashboardChart'
@@ -25,7 +28,8 @@ import { InvestmentPortfolio } from '../components/dashboard/InvestmentPortfolio
 import { FinancialGoalsTracker } from '../components/dashboard/FinancialGoalsTracker'
 import { TaxPlanningModule } from '../components/dashboard/TaxPlanningModule'
 import { LendingBorrowing } from '../components/dashboard/LendingBorrowing'
-import { LoanData, FixedExpense, UserEarnings, LentMoney, BorrowedMoney, calculateLendingBorrowingStats } from '../utils/loanCalculations'
+import { PersonalExpenses } from '../components/dashboard/PersonalExpenses'
+import { LoanData, FixedExpense, UserEarnings, LentMoney, BorrowedMoney, calculateLendingBorrowingStats, calculateLoanAnalytics } from '../utils/loanCalculations'
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth()
@@ -37,7 +41,8 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingLoan, setEditingLoan] = useState<LoanData | undefined>()
-  const [activeTab, setActiveTab] = useState<'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax' | 'lending-borrowing'>('loans')
+  const [showBreakdownModal, setShowBreakdownModal] = useState(false)
+  const [activeTab, setActiveTab] = useState<'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax' | 'lending-borrowing' | 'personal-expenses'>('loans')
 
   const fetchLoans = useCallback(async () => {
     try {
@@ -174,7 +179,64 @@ export const Dashboard: React.FC = () => {
   }
 
   // Calculate summary metrics
-  const totalOutstanding = loans.reduce((sum, loan) => sum + loan.outstanding_balance, 0)
+  const calculateTotalOutstandingWithInterest = () => {
+    const loanBreakdowns: Array<{
+      name: string
+      currentOutstanding: number
+      remainingInterest: number
+      total: number
+    }> = []
+
+    // Calculate current outstanding principal + remaining total interest
+    const loanOutstandingWithInterest = loans.reduce((sum, loan) => {
+      // Current outstanding principal
+      const currentOutstanding = loan.outstanding_balance || 0
+      
+      // Use calculateLoanAnalytics to get accurate paid and total interest
+      const loanAnalytics = calculateLoanAnalytics(loan)
+      
+      // Remaining total interest = Total interest - Interest paid till date
+      const remainingTotalInterest = Math.max(0, loanAnalytics.totalInterest - loanAnalytics.paidInterest)
+      
+      const loanTotal = currentOutstanding + remainingTotalInterest
+
+      // Store breakdown for this loan
+      loanBreakdowns.push({
+        name: loan.custom_name || loan.loan_type,
+        currentOutstanding,
+        remainingInterest: remainingTotalInterest,
+        total: loanTotal
+      })
+      
+      return sum + loanTotal
+    }, 0)
+    
+    // Add borrowed money outstanding balance
+    const borrowedBreakdowns: Array<{
+      name: string
+      amount: number
+    }> = []
+
+    const totalBorrowedOutstanding = borrowedMoney
+      .filter(loan => !loan.is_paid)
+      .reduce((sum, loan) => {
+        borrowedBreakdowns.push({
+          name: `Borrowed from ${loan.lender_name}`,
+          amount: loan.outstanding_balance
+        })
+        return sum + loan.outstanding_balance
+      }, 0)
+    
+    return {
+      total: loanOutstandingWithInterest + totalBorrowedOutstanding,
+      loanBreakdowns,
+      borrowedBreakdowns,
+      totalBorrowedOutstanding
+    }
+  }
+
+  const outstandingCalculation = calculateTotalOutstandingWithInterest()
+  const totalOutstanding = outstandingCalculation.total
   const totalEMI = loans.reduce((sum, loan) => sum + loan.emi_amount, 0)
   const avgInterestRate = loans.length > 0 
     ? loans.reduce((sum, loan) => sum + loan.interest_rate, 0) / loans.length 
@@ -194,6 +256,7 @@ export const Dashboard: React.FC = () => {
   const tabs = [
     { id: 'loans', label: 'My Loans', icon: PlusIcon },
     { id: 'expenses', label: 'Fixed Expenses', icon: CurrencyRupeeIcon },
+    { id: 'personal-expenses', label: 'Personal Expenses', icon: UserIcon },
     { id: 'dashboard', label: 'Dashboard', icon: ChartBarIcon },
     { id: 'simulator', label: 'Loan Simulator', icon: CalculatorIcon },
     { id: 'lending-borrowing', label: 'L&B', icon: BanknotesIcon },
@@ -233,12 +296,21 @@ export const Dashboard: React.FC = () => {
           </div>
 
           {/* Summary Cards */}
-          {loans.length > 0 && (
+          {(loans.length > 0 || borrowedMoney.some(loan => !loan.is_paid)) && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <Card>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Total Outstanding
-                </h3>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Total Outstanding Debt With Interest
+                  </h3>
+                  <button
+                    onClick={() => setShowBreakdownModal(true)}
+                    className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                    title="View detailed breakdown"
+                  >
+                    <EyeIcon className="h-5 w-5" />
+                  </button>
+                </div>
                 <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
                   {formatCurrency(totalOutstanding)}
                 </p>
@@ -268,7 +340,7 @@ export const Dashboard: React.FC = () => {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as 'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax' | 'lending-borrowing')}
+                  onClick={() => setActiveTab(tab.id as 'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax' | 'lending-borrowing' | 'personal-expenses')}
                   className={`flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600 dark:text-blue-400'
@@ -349,6 +421,12 @@ export const Dashboard: React.FC = () => {
                 Track your monthly fixed expenses like rent, utilities, subscriptions, and other regular payments. This helps you understand your monthly financial commitments alongside your loan EMIs.
               </p>
               <FixedExpensesForm onExpensesChange={setFixedExpenses} />
+            </div>
+          )}
+
+          {activeTab === 'personal-expenses' && (
+            <div className="space-y-6">
+              <PersonalExpenses />
             </div>
           )}
 
@@ -460,6 +538,88 @@ export const Dashboard: React.FC = () => {
           )}
         </motion.div>
       </div>
+
+      {/* Breakdown Modal */}
+      <Modal
+        isOpen={showBreakdownModal}
+        onClose={() => setShowBreakdownModal(false)}
+        title="Total Outstanding Debt Breakdown"
+      >
+        <div className="space-y-6">
+          {/* Loan Breakdowns */}
+          {outstandingCalculation.loanBreakdowns.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Loans Breakdown
+              </h4>
+              <div className="space-y-3">
+                {outstandingCalculation.loanBreakdowns.map((loan, index) => (
+                  <div key={index} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <h5 className="font-medium text-gray-900 dark:text-white mb-2">
+                      {loan.name}
+                    </h5>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-400">Current Outstanding:</span>
+                        <div className="font-medium text-blue-600 dark:text-blue-400">
+                          {formatCurrency(loan.currentOutstanding)}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-400">Remaining Interest:</span>
+                        <div className="font-medium text-orange-600 dark:text-orange-400">
+                          {formatCurrency(loan.remainingInterest)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <span className="text-gray-600 dark:text-gray-400 text-sm">Subtotal:</span>
+                      <div className="font-semibold text-gray-900 dark:text-white">
+                        {formatCurrency(loan.total)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Borrowed Money Breakdown */}
+          {outstandingCalculation.borrowedBreakdowns.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Borrowed Money
+              </h4>
+              <div className="space-y-3">
+                {outstandingCalculation.borrowedBreakdowns.map((borrowed, index) => (
+                  <div key={index} className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {borrowed.name}
+                      </span>
+                      <span className="font-semibold text-red-600 dark:text-red-400">
+                        {formatCurrency(borrowed.amount)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Total Summary */}
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-semibold text-gray-900 dark:text-white">
+                Total Outstanding Debt:
+              </span>
+              <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                {formatCurrency(outstandingCalculation.total)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       <LoanForm
         isOpen={isFormOpen}

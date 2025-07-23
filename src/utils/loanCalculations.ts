@@ -1,6 +1,7 @@
 export interface LoanData {
   id: string
   loan_type: string
+  custom_name?: string
   principal: number
   outstanding_balance: number
   interest_rate: number
@@ -249,7 +250,7 @@ export const calculateLoanAnalytics = (loan: LoanData): LoanAnalytics => {
   
   return {
     loanId: loan.id,
-    loanType: loan.loan_type,
+    loanType: loan.custom_name || loan.loan_type,
     totalPrincipal: loan.principal,
     totalInterest,
     monthlyEMI: loan.emi_amount,

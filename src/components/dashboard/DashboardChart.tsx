@@ -165,7 +165,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
 
   // Pie chart data for loan distribution (using outstanding balance)
   const pieData = loans.map((loan, index) => ({
-    name: loan.loan_type,
+    name: loan.custom_name || loan.loan_type,
     value: loan.outstanding_balance, // Use outstanding balance instead of principal
     color: COLORS[index % COLORS.length]
   }))
@@ -202,7 +202,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
 
   // Line chart data for EMI over time
   const lineData = loans.map((loan) => ({
-    name: loan.loan_type,
+    name: loan.custom_name || loan.loan_type,
     emi: loan.emi_amount,
     principal: loan.outstanding_balance, // Use outstanding balance for current view
     totalPrincipal: loan.principal, // Keep original for reference
