@@ -17,7 +17,7 @@ export const useAuth = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         setSession(session)
         setUser(session?.user ?? null)
         setLoading(false)
@@ -48,6 +48,16 @@ export const useAuth = () => {
     return { error }
   }
 
+  const signInWithProvider = async (provider: 'google' | 'github' | 'linkedin') => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: provider,
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`
+      }
+    })
+    return { data, error }
+  }
+
   return {
     user,
     session,
@@ -55,5 +65,6 @@ export const useAuth = () => {
     signUp,
     signIn,
     signOut,
+    signInWithProvider,
   }
 }
