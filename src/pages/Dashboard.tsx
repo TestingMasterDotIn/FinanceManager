@@ -42,6 +42,8 @@ export const Dashboard: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingLoan, setEditingLoan] = useState<LoanData | undefined>()
   const [showBreakdownModal, setShowBreakdownModal] = useState(false)
+  const [showEMIBreakdownModal, setShowEMIBreakdownModal] = useState(false)
+  const [showInterestBreakdownModal, setShowInterestBreakdownModal] = useState(false)
   const [activeTab, setActiveTab] = useState<'loans' | 'expenses' | 'dashboard' | 'ai' | 'simulator' | 'credit' | 'investments' | 'goals' | 'tax' | 'lending-borrowing' | 'personal-expenses'>('loans')
 
   const fetchLoans = useCallback(async () => {
@@ -237,7 +239,18 @@ export const Dashboard: React.FC = () => {
 
   const outstandingCalculation = calculateTotalOutstandingWithInterest()
   const totalOutstanding = outstandingCalculation.total
-  const totalEMI = loans.reduce((sum, loan) => sum + loan.emi_amount, 0)
+  
+  // Calculate total EMI including borrowed money interest
+  const loanEMI = loans.reduce((sum, loan) => sum + loan.emi_amount, 0)
+  const borrowedMoneyInterest = borrowedMoney
+    .filter(loan => !loan.is_paid)
+    .reduce((sum, loan) => {
+      // Calculate monthly interest for borrowed money (simple interest calculation)
+      const monthlyInterest = (loan.outstanding_balance * loan.interest_rate) / 100 / 12
+      return sum + monthlyInterest
+    }, 0)
+  const totalEMI = loanEMI + borrowedMoneyInterest
+  
   const avgInterestRate = loans.length > 0 
     ? loans.reduce((sum, loan) => sum + loan.interest_rate, 0) / loans.length 
     : 0
@@ -316,17 +329,35 @@ export const Dashboard: React.FC = () => {
                 </p>
               </Card>
               <Card>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Monthly EMI
-                </h3>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Monthly EMI + Interest
+                  </h3>
+                  <button
+                    onClick={() => setShowEMIBreakdownModal(true)}
+                    className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                    title="View EMI breakdown"
+                  >
+                    <EyeIcon className="h-5 w-5" />
+                  </button>
+                </div>
                 <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                   {formatCurrency(totalEMI)}
                 </p>
               </Card>
               <Card>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Average Interest Rate
-                </h3>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Average Interest Rate
+                  </h3>
+                  <button
+                    onClick={() => setShowInterestBreakdownModal(true)}
+                    className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                    title="View interest rate breakdown"
+                  >
+                    <EyeIcon className="h-5 w-5" />
+                  </button>
+                </div>
                 <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                   {avgInterestRate.toFixed(2)}%
                 </p>
@@ -616,6 +647,185 @@ export const Dashboard: React.FC = () => {
               <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                 {formatCurrency(outstandingCalculation.total)}
               </span>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* EMI Breakdown Modal */}
+      <Modal
+        isOpen={showEMIBreakdownModal}
+        onClose={() => setShowEMIBreakdownModal(false)}
+        title="Monthly EMI Breakdown"
+      >
+        <div className="space-y-6">
+          {/* Individual Loan EMIs */}
+          {loans.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Loan EMIs
+              </h4>
+              <div className="space-y-3">
+                {loans.map((loan, index) => (
+                  <div key={index} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {loan.custom_name || loan.loan_type}
+                      </span>
+                      <span className="font-semibold text-green-600 dark:text-green-400">
+                        {formatCurrency(loan.emi_amount)}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      Interest Rate: {loan.interest_rate}% | Tenure: {loan.tenure_months} months
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="pt-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Subtotal (Loans):</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {formatCurrency(loanEMI)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Borrowed Money Interest */}
+          {borrowedMoney.filter(loan => !loan.is_paid).length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Borrowed Money Interest (Monthly)
+              </h4>
+              <div className="space-y-3">
+                {borrowedMoney
+                  .filter(loan => !loan.is_paid)
+                  .map((loan, index) => {
+                    const monthlyInterest = (loan.outstanding_balance * loan.interest_rate) / 100 / 12
+                    return (
+                      <div key={index} className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            Interest on loan from {loan.lender_name}
+                          </span>
+                          <span className="font-semibold text-red-600 dark:text-red-400">
+                            {formatCurrency(monthlyInterest)}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          Outstanding: {formatCurrency(loan.outstanding_balance)} | Rate: {loan.interest_rate}%
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+              <div className="pt-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Subtotal (Borrowed Interest):</span>
+                  <span className="font-medium text-red-600 dark:text-red-400">
+                    {formatCurrency(borrowedMoneyInterest)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Total Summary */}
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-semibold text-gray-900 dark:text-white">
+                Total Monthly Payment:
+              </span>
+              <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {formatCurrency(totalEMI)}
+              </span>
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              {loans.length > 0 && `${loans.length} loan${loans.length > 1 ? 's' : ''}`}
+              {loans.length > 0 && borrowedMoney.filter(loan => !loan.is_paid).length > 0 && ' + '}
+              {borrowedMoney.filter(loan => !loan.is_paid).length > 0 && 
+                `${borrowedMoney.filter(loan => !loan.is_paid).length} borrowed amount${borrowedMoney.filter(loan => !loan.is_paid).length > 1 ? 's' : ''}`}
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Interest Rate Breakdown Modal */}
+      <Modal
+        isOpen={showInterestBreakdownModal}
+        onClose={() => setShowInterestBreakdownModal(false)}
+        title="Interest Rate Breakdown"
+      >
+        <div className="space-y-6">
+          {/* Individual Loan Interest Rates */}
+          {loans.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Individual Loan Interest Rates
+              </h4>
+              <div className="space-y-3">
+                {loans.map((loan, index) => {
+                  const loanAnalytics = calculateLoanAnalytics(loan)
+                  return (
+                    <div key={index} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {loan.custom_name || loan.loan_type}
+                        </span>
+                        <span className="font-semibold text-purple-600 dark:text-purple-400">
+                          {loan.interest_rate}%
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Principal:</span>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {formatCurrency(loan.principal)}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Total Interest:</span>
+                          <div className="font-medium text-red-600 dark:text-red-400">
+                            {formatCurrency(loanAnalytics.totalInterest)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Weighted Average Calculation */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+            <h5 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+              How Average Interest Rate is Calculated
+            </h5>
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Simple Average: Sum of all interest rates ÷ Number of loans
+            </p>
+            <div className="mt-2 text-sm">
+              <span className="text-blue-600 dark:text-blue-400">
+                ({loans.map(loan => `${loan.interest_rate}%`).join(' + ')}) ÷ {loans.length} = {avgInterestRate.toFixed(2)}%
+              </span>
+            </div>
+          </div>
+
+          {/* Total Summary */}
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-semibold text-gray-900 dark:text-white">
+                Average Interest Rate:
+              </span>
+              <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {avgInterestRate.toFixed(2)}%
+              </span>
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              Range: {Math.min(...loans.map(l => l.interest_rate)).toFixed(2)}% - {Math.max(...loans.map(l => l.interest_rate)).toFixed(2)}%
             </div>
           </div>
         </div>
