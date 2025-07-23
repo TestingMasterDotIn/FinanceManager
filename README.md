@@ -1,4 +1,4 @@
-# 🏦 LoanMaster - Smart Loan & Debt Management App
+# 🏦 FinanceManager - Smart Loan & Debt Management App
 
 A comprehensive loan management application built with React, TypeScript, Vite, and Supabase. Track multiple loans, simulate prepayments, visualize debt analytics, and get AI-powered optimization suggestions.
 

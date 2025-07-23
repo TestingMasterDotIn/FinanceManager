@@ -59,7 +59,7 @@ export const LandingPage: React.FC = () => {
                 transition={{ duration: 0.6 }}
               >
                 <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-4">
-                  LoanMaster
+                  FinanceManager
                 </h3>
                 <p className="text-gray-300 mb-6 max-w-md leading-relaxed">
                   Empowering you to take control of your financial journey with intelligent loan management and optimization tools.
@@ -122,8 +122,8 @@ export const LandingPage: React.FC = () => {
                 <h4 className="text-lg font-semibold mb-4">Get in Touch</h4>
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
-                    <EnvelopeIcon className="w-5 h-5 text-blue-400" />
-                    <span className="text-gray-300">support@loanmaster.com</span>
+                    {/* <EnvelopeIcon className="w-5 h-5 text-blue-400" /> */}
+                    {/* <span className="text-gray-300">support@loanmaster.com</span> */}
                   </div>
                   <div className="mt-4">
                     <Link 
@@ -148,7 +148,7 @@ export const LandingPage: React.FC = () => {
             className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center"
           >
             <p className="text-gray-400 text-sm mb-4 md:mb-0">
-              © 2025 LoanMaster. All rights reserved.
+              © 2025 FinanceManager. All rights reserved.
             </p>
             <div className="flex items-center space-x-2 text-sm text-gray-400">
               <span>Made with</span>

@@ -26,7 +26,7 @@ export const Navbar: React.FC = () => {
           <Link to="/" className="flex items-center space-x-2">
             <BanknotesIcon className="h-8 w-8 text-blue-600" />
             <span className="text-xl font-bold text-gray-900 dark:text-white">
-              LoanMaster
+              FinanceManager
             </span>
           </Link>
           
