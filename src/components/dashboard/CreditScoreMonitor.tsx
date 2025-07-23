@@ -189,7 +189,7 @@ export const CreditScoreMonitor: React.FC = () => {
             <div className="flex items-center space-x-3">
               <ShieldCheckIcon className="h-8 w-8 text-blue-600" />
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Credit Score Monitor</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Credit Score Monitor</h2>
                 <p className="text-sm text-gray-600">
                   {creditScore ? 'Last updated: ' + new Date(creditScore.last_updated).toLocaleDateString() : 'No credit score available'}
                 </p>
@@ -214,7 +214,7 @@ export const CreditScoreMonitor: React.FC = () => {
                 </div>
               </div>
               
-              <div className="text-lg font-semibold text-gray-900 mb-2">
+              <div className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 {creditScore.score >= 750 ? 'Excellent' : 
                  creditScore.score >= 700 ? 'Good' : 
                  creditScore.score >= 650 ? 'Fair' : 'Needs Improvement'}
@@ -254,7 +254,7 @@ export const CreditScoreMonitor: React.FC = () => {
           ) : (
             <div className="text-center py-8">
               <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Credit Score Available</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Credit Score Available</h3>
               <p className="text-gray-600 mb-6">
                 Add your PAN card details to fetch your credit score automatically from credit bureaus.
               </p>
@@ -279,7 +279,7 @@ export const CreditScoreMonitor: React.FC = () => {
             transition={{ duration: 0.3 }}
           >
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Enter PAN Details to Fetch Credit Score
               </h3>
               <Button

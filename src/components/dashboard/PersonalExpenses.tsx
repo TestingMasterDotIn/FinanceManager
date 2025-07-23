@@ -293,7 +293,7 @@ export const PersonalExpenses: React.FC = () => {
             <CurrencyRupeeIcon className="h-8 w-8 text-blue-600 mr-3" />
             <div>
               <p className="text-sm font-medium text-gray-600">Total Expenses</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalExpenses)}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalExpenses)}</p>
             </div>
           </div>
         </Card>
@@ -337,8 +337,8 @@ export const PersonalExpenses: React.FC = () => {
       {/* Header with Add and Filter Buttons */}
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-xl font-bold text-gray-900">Personal Expenses</h3>
-          <p className="text-gray-600">Track expenses spent on friends and family members</p>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Personal Expenses</h3>
+          <p className="text-gray-600 dark:text-gray-300">Track expenses spent on friends and family members</p>
         </div>
         <div className="flex space-x-2">
           <Button
@@ -370,8 +370,8 @@ export const PersonalExpenses: React.FC = () => {
         <Card className="p-8">
           <div className="text-center">
             <CurrencyRupeeIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No expenses recorded yet</h3>
-            <p className="text-gray-600 mb-4">Start tracking expenses spent on your friends and family</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No expenses recorded yet</h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">Start tracking expenses spent on your friends and family</p>
             <Button onClick={() => setIsFormOpen(true)} title="Add your first expense record">Add First Expense</Button>
           </div>
         </Card>
@@ -384,7 +384,7 @@ export const PersonalExpenses: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Card className="p-4 bg-white">
+              <Card className="p-4 bg-white dark:bg-gray-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4 flex-1">
                     <div className="flex-shrink-0">
@@ -402,7 +402,7 @@ export const PersonalExpenses: React.FC = () => {
                     </div>
                     
                     <div className="flex-1">
-                      <h4 className="text-lg font-semibold text-gray-900 flex items-center">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                         {expense.person_name}
                         {expense.payment_screenshot_url && (
                           <DocumentIcon className="h-4 w-4 ml-2 text-green-600" title="Payment screenshot available" />
@@ -477,7 +477,7 @@ export const PersonalExpenses: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Person Name *
               </label>
               <Input
@@ -490,7 +490,7 @@ export const PersonalExpenses: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Amount *
               </label>
               <Input
@@ -504,7 +504,7 @@ export const PersonalExpenses: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Expense Date *
               </label>
               <Input
@@ -516,7 +516,7 @@ export const PersonalExpenses: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Category *
               </label>
               <Select
@@ -635,40 +635,40 @@ export const PersonalExpenses: React.FC = () => {
                 </div>
               )}
               <div>
-                <h3 className="text-xl font-semibold text-gray-900">{viewingExpense.person_name}</h3>
-                <p className="text-gray-600">Expense Details</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{viewingExpense.person_name}</h3>
+                <p className="text-gray-600 dark:text-gray-300">Expense Details</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h4 className="font-semibold text-gray-900">Amount</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Amount</h4>
                 <p className="text-2xl font-bold text-blue-600">{formatCurrency(viewingExpense.amount)}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">Date</h4>
-                <p className="text-gray-600">{new Date(viewingExpense.expense_date).toLocaleDateString()}</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Date</h4>
+                <p className="text-gray-600 dark:text-gray-300">{new Date(viewingExpense.expense_date).toLocaleDateString()}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">Category</h4>
-                <p className="text-gray-600">{getCategoryDisplay(viewingExpense)}</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Category</h4>
+                <p className="text-gray-600 dark:text-gray-300">{getCategoryDisplay(viewingExpense)}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">Created</h4>
-                <p className="text-gray-600">{new Date(viewingExpense.created_at).toLocaleDateString()}</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Created</h4>
+                <p className="text-gray-600 dark:text-gray-300">{new Date(viewingExpense.created_at).toLocaleDateString()}</p>
               </div>
             </div>
 
             {viewingExpense.description && (
               <div>
-                <h4 className="font-semibold text-gray-900">Description</h4>
-                <p className="text-gray-600">{viewingExpense.description}</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Description</h4>
+                <p className="text-gray-600 dark:text-gray-300">{viewingExpense.description}</p>
               </div>
             )}
 
             {viewingExpense.payment_screenshot_url && (
               <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Payment Screenshot</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Payment Screenshot</h4>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <img
                     src={viewingExpense.payment_screenshot_url}
@@ -702,7 +702,7 @@ export const PersonalExpenses: React.FC = () => {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Person Name</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Person Name</label>
               <Input
                 type="text"
                 value={filters.person_name}
@@ -712,7 +712,7 @@ export const PersonalExpenses: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
               <Select
                 value={filters.category}
                 onChange={(e) => setFilters({...filters, category: e.target.value})}

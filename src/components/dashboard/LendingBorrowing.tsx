@@ -670,7 +670,7 @@ export const LendingBorrowing: React.FC = () => {
                 <BanknotesIcon className="h-8 w-8 text-red-600 mr-3" />
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Borrowed</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalBorrowed)}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalBorrowed)}</p>
                 </div>
               </div>
             </Card>
@@ -711,10 +711,10 @@ export const LendingBorrowing: React.FC = () => {
       {/* Header with Add Button */}
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-xl font-bold text-gray-900">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
             {activeSection === 'lent' ? 'Money Lending Records' : 'Money Borrowing Records'}
           </h3>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             {activeSection === 'lent' 
               ? 'Track money you\'ve lent to others with monthly interest tracking' 
               : 'Track money you\'ve borrowed from others with monthly interest tracking'
@@ -739,10 +739,10 @@ export const LendingBorrowing: React.FC = () => {
         <Card className="p-8">
           <div className="text-center">
             <BanknotesIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               No {activeSection === 'lent' ? 'lending' : 'borrowing'} records yet
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
               Start by adding your first {activeSection === 'lent' ? 'money lending' : 'money borrowing'} record
             </p>
             <Button onClick={() => setIsFormOpen(true)}>Add First Record</Button>
@@ -765,12 +765,12 @@ export const LendingBorrowing: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className={`p-4 ${loan.is_paid ? 'bg-green-50 border-green-200' : 'bg-white'}`}>
+                <Card className={`p-4 ${loan.is_paid ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-700' : 'bg-white dark:bg-gray-800'}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-4">
                         <div className="flex-1">
-                          <h4 className="text-lg font-semibold text-gray-900 flex items-center">
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                             <UserIcon className="h-5 w-5 mr-2 text-gray-500" />
                             {personName}
                             {overduePayments.length > 0 && (
@@ -916,7 +916,7 @@ export const LendingBorrowing: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {activeSection === 'lent' ? 'Borrower Name' : 'Lender Name'} *
               </label>
               <Input
@@ -929,7 +929,7 @@ export const LendingBorrowing: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Contact (Optional)
               </label>
               <Input
@@ -941,7 +941,7 @@ export const LendingBorrowing: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Amount *
               </label>
               <Input
@@ -963,7 +963,7 @@ export const LendingBorrowing: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Outstanding Balance *
               </label>
               <Input
@@ -977,7 +977,7 @@ export const LendingBorrowing: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Interest Rate (% per annum)
               </label>
               <Input
@@ -990,7 +990,7 @@ export const LendingBorrowing: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {activeSection === 'lent' ? 'Lent Date' : 'Borrowed Date'} *
               </label>
               <Input
@@ -1002,7 +1002,7 @@ export const LendingBorrowing: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Expected Return Date (Optional)
               </label>
               <Input
@@ -1014,7 +1014,7 @@ export const LendingBorrowing: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Notes (Optional)
             </label>
             <textarea
@@ -1064,10 +1064,10 @@ export const LendingBorrowing: React.FC = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h4 className="font-semibold text-gray-900">
+                <h4 className="font-semibold text-gray-900 dark:text-white">
                   {activeSection === 'lent' ? 'Borrower' : 'Lender'}
                 </h4>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-300">
                   {'borrower_name' in viewingLoan ? viewingLoan.borrower_name : viewingLoan.lender_name}
                 </p>
                 {(('borrower_contact' in viewingLoan && viewingLoan.borrower_contact) || 
@@ -1079,19 +1079,19 @@ export const LendingBorrowing: React.FC = () => {
                 )}
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">Original Amount</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Original Amount</h4>
                 <p className="text-2xl font-bold text-blue-600">{formatCurrency(viewingLoan.amount)}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">Outstanding Balance</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Outstanding Balance</h4>
                 <p className="text-xl font-bold text-orange-600">{formatCurrency(viewingLoan.outstanding_balance)}</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">Interest Rate</h4>
-                <p className="text-gray-600">{viewingLoan.interest_rate}% per annum</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Interest Rate</h4>
+                <p className="text-gray-600 dark:text-gray-300">{viewingLoan.interest_rate}% per annum</p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">
+                <h4 className="font-semibold text-gray-900 dark:text-white">
                   {activeSection === 'lent' ? 'Interest Earned' : 'Interest Paid'}
                 </h4>
                 <p className={`text-lg font-semibold ${activeSection === 'lent' ? 'text-purple-600' : 'text-red-600'}`}>
@@ -1099,23 +1099,23 @@ export const LendingBorrowing: React.FC = () => {
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">
+                <h4 className="font-semibold text-gray-900 dark:text-white">
                   {activeSection === 'lent' ? 'Lent Date' : 'Borrowed Date'}
                 </h4>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-300">
                   {new Date('lent_date' in viewingLoan ? viewingLoan.lent_date : viewingLoan.borrowed_date).toLocaleDateString()}
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">Expected Return</h4>
-                <p className="text-gray-600">
+                <h4 className="font-semibold text-gray-900 dark:text-white">Expected Return</h4>
+                <p className="text-gray-600 dark:text-gray-300">
                   {viewingLoan.expected_return_date ? new Date(viewingLoan.expected_return_date).toLocaleDateString() : 'Not specified'}
                 </p>
               </div>
             </div>
             
             <div>
-              <h4 className="font-semibold text-gray-900">Status</h4>
+              <h4 className="font-semibold text-gray-900 dark:text-white">Status</h4>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                 viewingLoan.is_paid 
                   ? 'bg-green-100 text-green-800' 
@@ -1132,8 +1132,8 @@ export const LendingBorrowing: React.FC = () => {
 
             {viewingLoan.notes && (
               <div>
-                <h4 className="font-semibold text-gray-900">Notes</h4>
-                <p className="text-gray-600">{viewingLoan.notes}</p>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Notes</h4>
+                <p className="text-gray-600 dark:text-gray-300">{viewingLoan.notes}</p>
               </div>
             )}
           </div>
@@ -1292,7 +1292,7 @@ export const LendingBorrowing: React.FC = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 New Outstanding Balance *
               </label>
               <Input
