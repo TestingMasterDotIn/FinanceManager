@@ -188,8 +188,15 @@ export const LendingBorrowing: React.FC = () => {
       (currentDate.getDate() >= startDate.getDate() ? 1 : 0)
     )
 
-    // Monthly interest amount
-    const monthlyInterest = (loan.amount * loan.interest_rate) / (12 * 100)
+    // Monthly interest amount (should be based on outstanding balance, not original amount)
+    const monthlyInterest = (loan.outstanding_balance * loan.interest_rate) / (12 * 100)
+
+    // Fetch current interest payments from database to check for existing records
+    const { data: existingPayments } = await supabase
+      .from('interest_payments')
+      .select('*')
+      .eq('loan_id', loan.id)
+      .eq('loan_type', loanType)
 
     // Generate payment records for each month
     const paymentPromises = []
@@ -197,9 +204,9 @@ export const LendingBorrowing: React.FC = () => {
       const dueDate = new Date(startDate)
       dueDate.setMonth(dueDate.getMonth() + month)
       
-      // Check if this payment already exists
-      const existingPayment = interestPayments.find(
-        p => p.loan_id === loan.id && p.loan_type === loanType && p.payment_month === month
+      // Check if this payment already exists in database
+      const existingPayment = existingPayments?.find(
+        p => p.payment_month === month
       )
 
       if (!existingPayment) {
@@ -218,8 +225,13 @@ export const LendingBorrowing: React.FC = () => {
 
     if (paymentPromises.length > 0) {
       await Promise.all(paymentPromises)
-      await fetchInterestPayments()
     }
+  }
+
+  // Generate interest schedule and refresh UI
+  const generateInterestScheduleAndRefresh = async (loan: LentMoney | BorrowedMoney) => {
+    await generateInterestSchedule(loan)
+    await fetchInterestPayments()
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -253,6 +265,25 @@ export const LendingBorrowing: React.FC = () => {
           setLentMoney(prev => prev.map(loan => 
             loan.id === editingLoan.id ? { ...loan, ...loanData } : loan
           ))
+
+          // If interest rate changed, regenerate interest schedule
+          if (editingLoan.interest_rate !== parseFloat(formData.interest_rate)) {
+            // Delete existing interest payments for this loan
+            await supabase
+              .from('interest_payments')
+              .delete()
+              .eq('loan_id', editingLoan.id)
+              .eq('loan_type', 'lent')
+
+            // Regenerate interest schedule with new rate
+            if (parseFloat(formData.interest_rate) > 0) {
+              const updatedLoan = { ...editingLoan, ...loanData }
+              await generateInterestSchedule(updatedLoan)
+            }
+            
+            // Refresh interest payments to update UI
+            await fetchInterestPayments()
+          }
         } else {
           // Create new lent money
           const { data, error } = await supabase
@@ -295,6 +326,25 @@ export const LendingBorrowing: React.FC = () => {
           setBorrowedMoney(prev => prev.map(loan => 
             loan.id === editingLoan.id ? { ...loan, ...loanData } : loan
           ))
+
+          // If interest rate changed, regenerate interest schedule
+          if (editingLoan.interest_rate !== parseFloat(formData.interest_rate)) {
+            // Delete existing interest payments for this loan
+            await supabase
+              .from('interest_payments')
+              .delete()
+              .eq('loan_id', editingLoan.id)
+              .eq('loan_type', 'borrowed')
+
+            // Regenerate interest schedule with new rate
+            if (parseFloat(formData.interest_rate) > 0) {
+              const updatedLoan = { ...editingLoan, ...loanData }
+              await generateInterestSchedule(updatedLoan)
+            }
+            
+            // Refresh interest payments to update UI
+            await fetchInterestPayments()
+          }
         } else {
           // Create new borrowed money
           const { data, error } = await supabase
@@ -1123,7 +1173,7 @@ export const LendingBorrowing: React.FC = () => {
                 <div className="text-center py-8">
                   <p className="text-gray-600 mb-4">No interest payment schedule generated yet.</p>
                   <Button
-                    onClick={() => generateInterestSchedule(selectedLoanForInterest)}
+                    onClick={() => generateInterestScheduleAndRefresh(selectedLoanForInterest)}
                     className="flex items-center space-x-2"
                     title="Generate monthly interest payment schedule for this loan"
                   >
