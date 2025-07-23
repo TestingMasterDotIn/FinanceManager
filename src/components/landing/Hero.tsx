@@ -64,7 +64,7 @@ export const Hero: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link to="/auth?mode=signup">
               <Button size="lg" className="px-8 py-3">
-                Start Free Trial
+                SignUp for Free
               </Button>
             </Link>
             <Link to="/auth">

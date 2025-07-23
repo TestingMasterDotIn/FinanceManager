@@ -190,7 +190,7 @@ export const CreditScoreMonitor: React.FC = () => {
               <ShieldCheckIcon className="h-8 w-8 text-blue-600" />
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Credit Score Monitor</h2>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   {creditScore ? 'Last updated: ' + new Date(creditScore.last_updated).toLocaleDateString() : 'No credit score available'}
                 </p>
               </div>
@@ -220,7 +220,7 @@ export const CreditScoreMonitor: React.FC = () => {
                  creditScore.score >= 650 ? 'Fair' : 'Needs Improvement'}
               </div>
               
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
                 {creditScore.score >= 750 ? 'You have an excellent credit score! Keep it up.' :
                  creditScore.score >= 700 ? 'Your credit score is good. Consider improving it further.' :
                  creditScore.score >= 650 ? 'Your credit score is fair. Work on improving it.' :
@@ -231,23 +231,23 @@ export const CreditScoreMonitor: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">{creditScore.factors.payment_history}%</div>
-                  <div className="text-xs text-gray-600">Payment History</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300">Payment History</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">{creditScore.factors.credit_utilization}%</div>
-                  <div className="text-xs text-gray-600">Credit Utilization</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300">Credit Utilization</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">{creditScore.factors.credit_length}</div>
-                  <div className="text-xs text-gray-600">Credit Length</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300">Credit Length</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">{creditScore.factors.credit_mix}</div>
-                  <div className="text-xs text-gray-600">Credit Mix</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300">Credit Mix</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-red-600">{creditScore.factors.new_inquiries}</div>
-                  <div className="text-xs text-gray-600">New Inquiries</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300">New Inquiries</div>
                 </div>
               </div>
             </div>
@@ -255,7 +255,7 @@ export const CreditScoreMonitor: React.FC = () => {
             <div className="text-center py-8">
               <DocumentTextIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Credit Score Available</h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
                 Add your PAN card details to fetch your credit score automatically from credit bureaus.
               </p>
               <Button
@@ -364,7 +364,7 @@ export const CreditScoreMonitor: React.FC = () => {
 
             <div className="flex items-center space-x-2 mb-4">
               <ExclamationTriangleIcon className="h-5 w-5 text-amber-500" />
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Your PAN details will be securely stored and used only for credit score retrieval.
               </p>
             </div>

@@ -627,8 +627,8 @@ export const LendingBorrowing: React.FC = () => {
               <div className="flex items-center">
                 <BanknotesIcon className="h-8 w-8 text-blue-600 mr-3" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Lent</p>
-                  <p className="text-2xl font-bold text-gray-500">{formatCurrency(stats.totalLent)}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Lent</p>
+                  <p className="text-2xl font-bold text-gray-500 dark:text-gray-200">{formatCurrency(stats.totalLent)}</p>
                 </div>
               </div>
             </Card>
@@ -637,7 +637,7 @@ export const LendingBorrowing: React.FC = () => {
               <div className="flex items-center">
                 <CheckCircleIcon className="h-8 w-8 text-green-600 mr-3" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Repaid</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Repaid</p>
                   <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalLentPaid)}</p>
                 </div>
               </div>
@@ -647,7 +647,7 @@ export const LendingBorrowing: React.FC = () => {
               <div className="flex items-center">
                 <ClockIcon className="h-8 w-8 text-orange-600 mr-3" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Pending</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Pending</p>
                   <p className="text-2xl font-bold text-orange-600">{formatCurrency(stats.totalLentPending)}</p>
                 </div>
               </div>
@@ -657,7 +657,7 @@ export const LendingBorrowing: React.FC = () => {
               <div className="flex items-center">
                 <CurrencyRupeeIcon className="h-8 w-8 text-purple-600 mr-3" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Interest Earned</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Interest Earned</p>
                   <p className="text-2xl font-bold text-purple-600">{formatCurrency(stats.totalLentInterestEarned)}</p>
                 </div>
               </div>
@@ -669,7 +669,7 @@ export const LendingBorrowing: React.FC = () => {
               <div className="flex items-center">
                 <BanknotesIcon className="h-8 w-8 text-red-600 mr-3" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Borrowed</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Borrowed</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalBorrowed)}</p>
                 </div>
               </div>
@@ -679,7 +679,7 @@ export const LendingBorrowing: React.FC = () => {
               <div className="flex items-center">
                 <CheckCircleIcon className="h-8 w-8 text-green-600 mr-3" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Repaid</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Repaid</p>
                   <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalBorrowedPaid)}</p>
                 </div>
               </div>
@@ -689,7 +689,7 @@ export const LendingBorrowing: React.FC = () => {
               <div className="flex items-center">
                 <ClockIcon className="h-8 w-8 text-orange-600 mr-3" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Pending</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Pending</p>
                   <p className="text-2xl font-bold text-orange-600">{formatCurrency(stats.totalBorrowedPending)}</p>
                 </div>
               </div>
@@ -699,7 +699,7 @@ export const LendingBorrowing: React.FC = () => {
               <div className="flex items-center">
                 <CurrencyRupeeIcon className="h-8 w-8 text-red-600 mr-3" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Interest Paid</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Interest Paid</p>
                   <p className="text-2xl font-bold text-red-600">{formatCurrency(stats.totalBorrowedInterestPaid)}</p>
                 </div>
               </div>
@@ -771,13 +771,13 @@ export const LendingBorrowing: React.FC = () => {
                       <div className="flex items-center space-x-4">
                         <div className="flex-1">
                           <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                            <UserIcon className="h-5 w-5 mr-2 text-gray-500" />
+                            <UserIcon className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-300" />
                             {personName}
                             {overduePayments.length > 0 && (
                               <ExclamationTriangleIcon className="h-5 w-5 ml-2 text-red-500" />
                             )}
                           </h4>
-                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-2 text-sm text-gray-600">
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-2 text-sm text-gray-600 dark:text-gray-300">
                             <div>
                               <span className="font-medium">Amount:</span> {formatCurrency(loan.amount)}
                             </div>
@@ -1072,7 +1072,7 @@ export const LendingBorrowing: React.FC = () => {
                 </p>
                 {(('borrower_contact' in viewingLoan && viewingLoan.borrower_contact) || 
                   ('lender_contact' in viewingLoan && viewingLoan.lender_contact)) && (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-300">
                     {'borrower_contact' in viewingLoan ? viewingLoan.borrower_contact : 
                      'lender_contact' in viewingLoan ? viewingLoan.lender_contact : ''}
                   </p>
@@ -1124,7 +1124,7 @@ export const LendingBorrowing: React.FC = () => {
                 {viewingLoan.is_paid ? 'Paid' : 'Pending'}
               </span>
               {viewingLoan.is_paid && viewingLoan.paid_date && (
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                   Paid on: {new Date(viewingLoan.paid_date).toLocaleDateString()}
                 </p>
               )}
@@ -1171,7 +1171,7 @@ export const LendingBorrowing: React.FC = () => {
             <div className="max-h-96 overflow-y-auto">
               {getLoanInterestPayments(selectedLoanForInterest.id, activeSection).length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-600 mb-4">No interest payment schedule generated yet.</p>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">No interest payment schedule generated yet.</p>
                   <Button
                     onClick={() => generateInterestScheduleAndRefresh(selectedLoanForInterest)}
                     className="flex items-center space-x-2"
@@ -1205,7 +1205,7 @@ export const LendingBorrowing: React.FC = () => {
                               <h5 className="font-semibold">
                                 Month {payment.payment_month}
                               </h5>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-gray-600 dark:text-gray-300">
                                 Due: {dueDate.toLocaleDateString()} | 
                                 Amount: {formatCurrency(payment.amount_paid)}
                               </p>
@@ -1240,7 +1240,7 @@ export const LendingBorrowing: React.FC = () => {
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     {activeSection === 'lent' ? 'Total Earned' : 'Total Paid'}
                   </p>
                   <p className={`text-lg font-semibold ${activeSection === 'lent' ? 'text-green-600' : 'text-red-600'}`}>
@@ -1248,13 +1248,13 @@ export const LendingBorrowing: React.FC = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Pending</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Pending</p>
                   <p className="text-lg font-semibold text-orange-600">
                     {formatCurrency(calculatePendingInterest(selectedLoanForInterest.id, activeSection))}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Overdue</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Overdue</p>
                   <p className="text-lg font-semibold text-red-600">
                     {getOverduePayments(selectedLoanForInterest.id, activeSection).length} payments
                   </p>
@@ -1303,7 +1303,7 @@ export const LendingBorrowing: React.FC = () => {
                 placeholder="Enter new outstanding balance"
                 required
               />
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                 Enter 0 to mark as fully paid, or any amount between 0 and {formatCurrency(selectedLoanForBalance.amount)}
               </p>
             </div>

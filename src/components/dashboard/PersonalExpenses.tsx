@@ -292,7 +292,7 @@ export const PersonalExpenses: React.FC = () => {
           <div className="flex items-center">
             <CurrencyRupeeIcon className="h-8 w-8 text-blue-600 mr-3" />
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Expenses</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Expenses</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalExpenses)}</p>
             </div>
           </div>
@@ -302,7 +302,7 @@ export const PersonalExpenses: React.FC = () => {
           <div className="flex items-center">
             <CalendarIcon className="h-8 w-8 text-green-600 mr-3" />
             <div>
-              <p className="text-sm font-medium text-gray-600">This Month</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">This Month</p>
               <p className="text-2xl font-bold text-green-600">{formatCurrency(stats.thisMonthExpenses)}</p>
             </div>
           </div>
@@ -312,7 +312,7 @@ export const PersonalExpenses: React.FC = () => {
           <div className="flex items-center">
             <TagIcon className="h-8 w-8 text-purple-600 mr-3" />
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Records</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Records</p>
               <p className="text-2xl font-bold text-purple-600">{stats.expenseCount}</p>
             </div>
           </div>
@@ -322,12 +322,12 @@ export const PersonalExpenses: React.FC = () => {
           <div className="flex items-center">
             <TagIcon className="h-8 w-8 text-orange-600 mr-3" />
             <div>
-              <p className="text-sm font-medium text-gray-600">Top Category</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Top Category</p>
               <p className="text-lg font-bold text-orange-600">
                 {stats.topCategory ? stats.topCategory.name : 'None'}
               </p>
               {stats.topCategory && (
-                <p className="text-sm text-gray-500">{formatCurrency(stats.topCategory.amount)}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-200">{formatCurrency(stats.topCategory.amount)}</p>
               )}
             </div>
           </div>
@@ -396,7 +396,7 @@ export const PersonalExpenses: React.FC = () => {
                         />
                       ) : (
                         <div className="h-12 w-12 bg-gray-200 rounded-full flex items-center justify-center">
-                          <UserIcon className="h-6 w-6 text-gray-500" />
+                          <UserIcon className="h-6 w-6 text-gray-500 dark:text-gray-300" />
                         </div>
                       )}
                     </div>
@@ -408,7 +408,7 @@ export const PersonalExpenses: React.FC = () => {
                           <DocumentIcon className="h-4 w-4 ml-2 text-green-600" title="Payment screenshot available" />
                         )}
                       </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm text-gray-600">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm text-gray-600 dark:text-gray-300">
                         <div>
                           <span className="font-medium">Amount:</span> {formatCurrency(expense.amount)}
                         </div>
@@ -568,7 +568,7 @@ export const PersonalExpenses: React.FC = () => {
                   onChange={(e) => setFormData({...formData, person_photo_url: e.target.value})}
                   placeholder="https://example.com/photo.jpg"
                 />
-                <p className="text-xs text-gray-500 mt-1">Photo of the person this expense was for</p>
+                <p className="text-xs text-gray-500 dark:text-gray-300 mt-1">Photo of the person this expense was for</p>
               </div>
 
               <div>
@@ -581,7 +581,7 @@ export const PersonalExpenses: React.FC = () => {
                   onChange={(e) => setFormData({...formData, payment_screenshot_url: e.target.value})}
                   placeholder="https://example.com/payment-screenshot.jpg"
                 />
-                <p className="text-xs text-gray-500 mt-1">Screenshot of payment/transaction receipt</p>
+                <p className="text-xs text-gray-500 dark:text-gray-300 mt-1">Screenshot of payment/transaction receipt</p>
               </div>
             </div>
           </div>
@@ -631,7 +631,7 @@ export const PersonalExpenses: React.FC = () => {
                 />
               ) : (
                 <div className="h-16 w-16 bg-gray-200 rounded-full flex items-center justify-center">
-                  <UserIcon className="h-8 w-8 text-gray-500" />
+                  <UserIcon className="h-8 w-8 text-gray-500 dark:text-gray-300" />
                 </div>
               )}
               <div>
@@ -676,7 +676,7 @@ export const PersonalExpenses: React.FC = () => {
                     className="max-w-full h-auto rounded-md shadow-sm border"
                     style={{ maxHeight: '300px' }}
                   />
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-gray-500 dark:text-gray-300 mt-2">
                     <a 
                       href={viewingExpense.payment_screenshot_url} 
                       target="_blank" 
