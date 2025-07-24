@@ -99,6 +99,8 @@ export const ChitFund: React.FC = () => {
   const [viewDetailsChit, setViewDetailsChit] = useState<Chit | null>(null)
   const [showPaymentsModal, setShowPaymentsModal] = useState(false)
   const [editingPayment, setEditingPayment] = useState<ChitPayment | null>(null)
+  const [showStatsModal, setShowStatsModal] = useState(false)
+  const [selectedStatsType, setSelectedStatsType] = useState<'active' | 'won' | 'invested' | 'dividend' | 'amount_won' | 'total_value'>('active')
 
   const [formData, setFormData] = useState<ChitFormData>({
     chit_name: '',
@@ -489,7 +491,7 @@ export const ChitFund: React.FC = () => {
     }
   }
 
-  const activeChits = chits.filter(c => c.status === 'active').length
+  const activeChits = chits.filter(c => c.current_month < c.total_months && c.status !== 'discontinued').length
   const wonChits = chits.filter(c => c.status === 'won').length
   const totalInvested = chits.reduce((sum, c) => sum + c.total_paid, 0)
   const totalValue = chits.reduce((sum, c) => sum + c.chit_value, 0)
@@ -532,78 +534,143 @@ export const ChitFund: React.FC = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <UserGroupIcon className="h-6 w-6 text-blue-600" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <UserGroupIcon className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">Active Chits</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeChits}</p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Active Chits</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeChits}</p>
-            </div>
+            <button
+              onClick={() => {
+                setSelectedStatsType('active')
+                setShowStatsModal(true)
+              }}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <EyeIcon className="h-5 w-5" />
+            </button>
           </div>
         </Card>
 
         <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <TrophyIcon className="h-6 w-6 text-green-600" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <TrophyIcon className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">Won Chits</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{wonChits}</p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Won Chits</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{wonChits}</p>
-            </div>
+            <button
+              onClick={() => {
+                setSelectedStatsType('won')
+                setShowStatsModal(true)
+              }}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <EyeIcon className="h-5 w-5" />
+            </button>
           </div>
         </Card>
 
         <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <CurrencyRupeeIcon className="h-6 w-6 text-indigo-600" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <CurrencyRupeeIcon className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">Total Invested</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrencyCompact(totalInvested)}</p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Total Invested</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrencyCompact(totalInvested)}</p>
-            </div>
+            <button
+              onClick={() => {
+                setSelectedStatsType('invested')
+                setShowStatsModal(true)
+              }}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <EyeIcon className="h-5 w-5" />
+            </button>
           </div>
         </Card>
 
         <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <CurrencyRupeeIcon className="h-6 w-6 text-orange-600" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <CurrencyRupeeIcon className="h-6 w-6 text-orange-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">Total Dividend</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrencyCompact(totalDividends)}</p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Total Dividend</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrencyCompact(totalDividends)}</p>
-            </div>
+            <button
+              onClick={() => {
+                setSelectedStatsType('dividend')
+                setShowStatsModal(true)
+              }}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <EyeIcon className="h-5 w-5" />
+            </button>
           </div>
         </Card>
 
         <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <TrophyIcon className="h-6 w-6 text-yellow-600" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <TrophyIcon className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">Amount Won</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrencyCompact(totalWonAmount)}</p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Amount Won</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrencyCompact(totalWonAmount)}</p>
-            </div>
+            <button
+              onClick={() => {
+                setSelectedStatsType('amount_won')
+                setShowStatsModal(true)
+              }}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <EyeIcon className="h-5 w-5" />
+            </button>
           </div>
         </Card>
 
         <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <BanknotesIcon className="h-6 w-6 text-purple-600" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <BanknotesIcon className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300">Total Value</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrencyCompact(totalValue)}</p>
+              </div>
             </div>
-            <div className="ml-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Total Value</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrencyCompact(totalValue)}</p>
-            </div>
+            <button
+              onClick={() => {
+                setSelectedStatsType('total_value')
+                setShowStatsModal(true)
+              }}
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <EyeIcon className="h-5 w-5" />
+            </button>
           </div>
         </Card>
       </div>
-
       {/* Chits List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {chits.map((chit) => (
@@ -693,44 +760,65 @@ export const ChitFund: React.FC = () => {
                   <EyeIcon className="h-4 w-4 mr-1" />
                   Details
                 </Button>
+                {(chit.status === 'active' || chit.status === 'won') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedChit(chit)
+                      setEditingPayment(null)
+                      setPaymentFormData({
+                        ...paymentFormData,
+                        month_number: chit.current_month + 1,
+                        amount_paid: chit.monthly_contribution
+                      })
+                      setIsPaymentFormOpen(true)
+                    }}
+                    className="flex-1"
+                  >
+                    <PlusIcon className="h-4 w-4 mr-1" />
+                    Payment
+                  </Button>
+                )}
                 {chit.status === 'active' && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedChit(chit)
-                        setEditingPayment(null)
-                        setPaymentFormData({
-                          ...paymentFormData,
-                          month_number: chit.current_month + 1,
-                          amount_paid: chit.monthly_contribution
-                        })
-                        setIsPaymentFormOpen(true)
-                      }}
-                      className="flex-1"
-                    >
-                      <PlusIcon className="h-4 w-4 mr-1" />
-                      Payment
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setWinningChit(chit)
-                        setWinFormData({
-                          won_month: chit.current_month,
-                          won_amount: chit.chit_value,
-                          auction_amount: chit.chit_value,
-                          notes: ''
-                        })
-                        setIsWinFormOpen(true)
-                      }}
-                      className="text-green-600 hover:text-green-700"
-                    >
-                      <CheckCircleIcon className="h-4 w-4" />
-                    </Button>
-                  </>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setWinningChit(chit)
+                      setWinFormData({
+                        won_month: chit.current_month,
+                        won_amount: chit.chit_value,
+                        auction_amount: chit.chit_value,
+                        notes: ''
+                      })
+                      setIsWinFormOpen(true)
+                    }}
+                    className="text-green-600 hover:text-green-700"
+                    title="Mark as Won"
+                  >
+                    <CheckCircleIcon className="h-4 w-4" />
+                  </Button>
+                )}
+                {chit.status === 'won' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setWinningChit(chit)
+                      setWinFormData({
+                        won_month: chit.won_month || 1,
+                        won_amount: chit.won_amount || 0,
+                        auction_amount: chit.auction_amount || chit.won_amount || 0,
+                        notes: ''
+                      })
+                      setIsWinFormOpen(true)
+                    }}
+                    className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                    title="Edit Win Details"
+                  >
+                    <TrophyIcon className="h-4 w-4" />
+                  </Button>
                 )}
                 <Button
                   variant="outline"
@@ -751,6 +839,7 @@ export const ChitFund: React.FC = () => {
                     })
                     setIsFormOpen(true)
                   }}
+                  title="Edit Chit Details"
                 >
                   <PencilIcon className="h-4 w-4" />
                 </Button>
@@ -759,6 +848,7 @@ export const ChitFund: React.FC = () => {
                   size="sm"
                   onClick={() => handleDelete(chit)}
                   className="text-red-600 hover:text-red-700"
+                  title="Delete Chit"
                 >
                   <TrashIcon className="h-4 w-4" />
                 </Button>
@@ -1193,7 +1283,7 @@ export const ChitFund: React.FC = () => {
         )}
       </Modal>
 
-      {/* Mark as Won Modal */}
+      {/* Mark as Won / Edit Win Details Modal */}
       <Modal
         isOpen={isWinFormOpen}
         onClose={() => {
@@ -1201,18 +1291,32 @@ export const ChitFund: React.FC = () => {
           setWinningChit(null)
           resetWinForm()
         }}
-        title={`Mark as Won - ${winningChit?.chit_name}`}
+        title={winningChit?.status === 'won' ? `Edit Win Details - ${winningChit?.chit_name}` : `Mark as Won - ${winningChit?.chit_name}`}
       >
         <form onSubmit={handleWinSubmit} className="space-y-4">
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <div className="flex items-center mb-2">
-              <TrophyIcon className="h-5 w-5 text-green-600 mr-2" />
-              <h4 className="font-semibold text-green-800">Congratulations! You won this chit!</h4>
+          {winningChit?.status !== 'won' && (
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <div className="flex items-center mb-2">
+                <TrophyIcon className="h-5 w-5 text-green-600 mr-2" />
+                <h4 className="font-semibold text-green-800">Congratulations! You won this chit!</h4>
+              </div>
+              <p className="text-green-700 text-sm">
+                Please enter the details of your chit win. This will mark the chit as won and update its status.
+              </p>
             </div>
-            <p className="text-green-700 text-sm">
-              Please enter the details of your chit win. This will mark the chit as won and update its status.
-            </p>
-          </div>
+          )}
+
+          {winningChit?.status === 'won' && (
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+              <div className="flex items-center mb-2">
+                <TrophyIcon className="h-5 w-5 text-yellow-600 mr-2" />
+                <h4 className="font-semibold text-yellow-800">Edit Win Details</h4>
+              </div>
+              <p className="text-yellow-700 text-sm">
+                Update the details of your chit win. You can modify the won month, amount received, or auction amount.
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
@@ -1264,14 +1368,14 @@ export const ChitFund: React.FC = () => {
               onChange={(e) => setWinFormData({ ...winFormData, notes: e.target.value })}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Any additional details about winning this chit..."
+              placeholder={winningChit?.status === 'won' ? "Update notes about winning this chit..." : "Any additional details about winning this chit..."}
             />
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700">
+            <Button type="submit" className={`flex-1 ${winningChit?.status === 'won' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'}`}>
               <TrophyIcon className="h-4 w-4 mr-2" />
-              Mark as Won
+              {winningChit?.status === 'won' ? 'Update Win Details' : 'Mark as Won'}
             </Button>
             <Button
               type="button"
@@ -1287,6 +1391,426 @@ export const ChitFund: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Statistics Details Modal */}
+      <Modal
+        isOpen={showStatsModal}
+        onClose={() => setShowStatsModal(false)}
+        title={`${selectedStatsType.charAt(0).toUpperCase() + selectedStatsType.slice(1).replace('_', ' ')} Details`}
+      >
+        <div className="max-h-96 overflow-y-auto">
+          {selectedStatsType === 'active' && (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                Total Active Chits: <span className="font-semibold text-gray-900 dark:text-white">{activeChits}</span>
+              </div>
+              {chits.filter(c => c.current_month < c.total_months && c.status !== 'discontinued').length === 0 ? (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No active chits found</p>
+              ) : (
+                chits.filter(c => c.current_month < c.total_months && c.status !== 'discontinued').map(chit => (
+                  <div key={chit.id} className="border dark:border-gray-600 rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{chit.chit_name}</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Chit Value: {formatCurrency(chit.chit_value)}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Monthly: {formatCurrency(chit.monthly_contribution)}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Progress: {chit.current_month}/{chit.total_months} months ({Math.round(calculateProgress(chit))}%)
+                        </p>
+                        {chit.status === 'won' && (
+                          <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                            ✓ Won in month {chit.won_month} - Continue payments to help others
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          Start: {new Date(chit.start_date).toLocaleDateString()}
+                        </div>
+                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${getStatusColor(chit.status)}`}>
+                          {chit.status.toUpperCase()}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Progress bar */}
+                    <div className="mt-3">
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            chit.status === 'won' ? 'bg-green-500' : 'bg-indigo-600'
+                          }`}
+                          style={{ width: `${calculateProgress(chit)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+              
+              {/* Summary info */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                <h5 className="font-medium text-blue-800 dark:text-blue-200 mb-1">Active Chits Definition</h5>
+                <p className="text-xs text-blue-600 dark:text-blue-300">
+                  Chits are considered "active" when they haven't reached 100% completion, regardless of win status. 
+                  Even after winning, you continue making payments to support other members until the chit term ends.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {selectedStatsType === 'won' && (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                Total Won Chits: <span className="font-semibold text-gray-900 dark:text-white">{wonChits}</span>
+              </div>
+              {chits.filter(c => c.status === 'won').length === 0 ? (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No won chits found</p>
+              ) : (
+                chits.filter(c => c.status === 'won').map(chit => (
+                  <div key={chit.id} className="border dark:border-gray-600 rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{chit.chit_name}</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Chit Value: {formatCurrency(chit.chit_value)}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Won Amount: {formatCurrency(chit.won_amount || 0)}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Won in Month: {chit.won_month}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          <TrophyIcon className="h-3 w-3 mr-1" />
+                          Won
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {selectedStatsType === 'invested' && (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                Total Invested: <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(totalInvested)}</span>
+              </div>
+              {chits.map(chit => {
+                const chitPayments = payments[chit.id] || []
+                const chitInvested = chitPayments.reduce((sum: number, payment: ChitPayment) => sum + payment.amount_paid, 0)
+                
+                if (chitInvested === 0) return null
+                
+                return (
+                  <div key={chit.id} className="border dark:border-gray-600 rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{chit.chit_name}</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {chit.organizer_name} • {chit.status.toUpperCase()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
+                          {formatCurrencyCompact(chitInvested)}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {chitPayments.length} payments
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Payment breakdown */}
+                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Payment History</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          Expected: {formatCurrency(chit.monthly_contribution)} per month
+                        </span>
+                      </div>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {chitPayments.length > 0 ? (
+                          chitPayments.map(payment => (
+                            <div key={payment.id} className="flex justify-between items-center text-xs">
+                              <span className="text-gray-600 dark:text-gray-300">
+                                Month {payment.month_number} ({new Date(payment.payment_date).toLocaleDateString()})
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-900 dark:text-white">
+                                  {formatCurrency(payment.amount_paid)}
+                                </span>
+                                {payment.is_dividend && (
+                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs">
+                                    +{formatCurrencyCompact(payment.dividend_amount)} div
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-xs text-gray-400 text-center py-2">No payments yet</div>
+                        )}
+                      </div>
+                      <div className="border-t dark:border-gray-600 pt-2 mt-2 flex justify-between text-sm font-medium">
+                        <span className="text-gray-700 dark:text-gray-200">Total Invested:</span>
+                        <span className="text-indigo-600 dark:text-indigo-400">{formatCurrency(chitInvested)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }).filter(Boolean)}
+            </div>
+          )}
+
+          {selectedStatsType === 'dividend' && (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                Total Dividends: <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(totalDividends)}</span>
+              </div>
+              {chits.map(chit => {
+                const chitPayments = payments[chit.id] || []
+                const dividendPayments = chitPayments.filter(p => p.is_dividend)
+                const chitDividends = dividendPayments.reduce((sum: number, payment: ChitPayment) => {
+                  return sum + (payment.is_dividend ? payment.dividend_amount : 0)
+                }, 0)
+                
+                if (chitDividends === 0) return null
+                
+                return (
+                  <div key={chit.id} className="border dark:border-gray-600 rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{chit.chit_name}</h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {chit.organizer_name} • {chit.status.toUpperCase()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+                          {formatCurrencyCompact(chitDividends)}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {dividendPayments.length} dividend payments
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dividend breakdown */}
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-medium text-green-700 dark:text-green-300">Dividend History</span>
+                        <span className="text-xs text-green-600 dark:text-green-400">
+                          Monthly: {formatCurrency(chit.monthly_contribution)}
+                        </span>
+                      </div>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {dividendPayments.length > 0 ? (
+                          dividendPayments.map(payment => (
+                            <div key={payment.id} className="flex justify-between items-center text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-600 dark:text-gray-300">
+                                  Month {payment.month_number}
+                                </span>
+                                <span className="text-gray-500 dark:text-gray-400">
+                                  ({new Date(payment.payment_date).toLocaleDateString()})
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-600 dark:text-gray-300">
+                                  Paid: {formatCurrencyCompact(payment.amount_paid)}
+                                </span>
+                                <span className="font-medium text-green-600 dark:text-green-400">
+                                  Saved: {formatCurrencyCompact(payment.dividend_amount)}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-xs text-gray-400 text-center py-2">No dividend payments yet</div>
+                        )}
+                      </div>
+                      
+                      {/* Summary calculations */}
+                      <div className="border-t border-green-200 dark:border-green-700 pt-2 mt-2 space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-600 dark:text-gray-300">Total Expected:</span>
+                          <span className="text-gray-700 dark:text-gray-200">
+                            {formatCurrency(dividendPayments.length * chit.monthly_contribution)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-600 dark:text-gray-300">Total Paid:</span>
+                          <span className="text-gray-700 dark:text-gray-200">
+                            {formatCurrency(dividendPayments.reduce((sum, p) => sum + p.amount_paid, 0))}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm font-medium border-t border-green-200 dark:border-green-700 pt-1">
+                          <span className="text-green-700 dark:text-green-200">Total Dividends:</span>
+                          <span className="text-green-600 dark:text-green-400">{formatCurrency(chitDividends)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Show remaining potential dividends for active chits */}
+                    {chit.status === 'active' && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2">
+                        <div className="text-xs text-blue-700 dark:text-blue-300">
+                          <span className="font-medium">Future Potential:</span> If you continue receiving dividends at the current rate, 
+                          you could save up to {formatCurrencyCompact((chit.total_months - chit.current_month) * (chitDividends / Math.max(dividendPayments.length, 1)))} 
+                          more over {chit.total_months - chit.current_month} remaining months.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              }).filter(Boolean)}
+              
+              {/* Summary for all dividends */}
+              {totalDividends > 0 && (
+                <div className="border-2 border-green-200 dark:border-green-700 rounded-lg p-4 bg-green-50 dark:bg-green-900/20">
+                  <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2">Dividend Summary</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-green-600 dark:text-green-300">Total Dividends Received:</span>
+                      <div className="text-lg font-bold text-green-700 dark:text-green-200">{formatCurrency(totalDividends)}</div>
+                    </div>
+                    <div>
+                      <span className="text-green-600 dark:text-green-300">Average per Payment:</span>
+                      <div className="text-lg font-bold text-green-700 dark:text-green-200">
+                        {formatCurrency(totalDividends / Math.max(Object.values(payments).flat().filter(p => p.is_dividend).length, 1))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-green-600 dark:text-green-400 mt-2">
+                    💡 Dividends represent money saved when auction amounts are lower than the monthly contribution.
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {selectedStatsType === 'amount_won' && (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                Total Amount Won: <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(totalWonAmount)}</span>
+              </div>
+              {chits.filter(c => c.status === 'won' && c.won_amount).length === 0 ? (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">No winning amounts recorded</p>
+              ) : (
+                chits.filter(c => c.status === 'won' && c.won_amount).map(chit => (
+                  <div key={chit.id} className="border dark:border-gray-600 rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{chit.chit_name}</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Chit Value: {formatCurrency(chit.chit_value)}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          Won in Month: {chit.won_month}
+                        </p>
+                        {chit.auction_amount && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            Auction Amount: {formatCurrency(chit.auction_amount)}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-semibold text-yellow-600 dark:text-yellow-400">
+                          {formatCurrencyCompact(chit.won_amount || 0)}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          Amount Received
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {selectedStatsType === 'total_value' && (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                Total Portfolio Value: <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(totalValue)}</span>
+              </div>
+              
+              {/* Summary breakdown */}
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-300">Total Invested:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(totalInvested)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-300">Total Dividends:</span>
+                  <span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(totalDividends)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-300">Amount Won:</span>
+                  <span className="font-medium text-yellow-600 dark:text-yellow-400">{formatCurrency(totalWonAmount)}</span>
+                </div>
+                <div className="border-t dark:border-gray-600 pt-2 flex justify-between font-semibold">
+                  <span className="text-gray-900 dark:text-white">Net Portfolio Value:</span>
+                  <span className={`${totalValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {formatCurrency(totalValue)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Individual chit breakdown */}
+              <div className="space-y-3">
+                <h5 className="font-medium text-gray-900 dark:text-white">Chit-wise Breakdown:</h5>
+                {chits.map(chit => {
+                  const chitPayments = payments[chit.id] || []
+                  const chitInvested = chitPayments.reduce((sum: number, payment: ChitPayment) => sum + payment.amount_paid, 0)
+                  const chitDividends = chitPayments.reduce((sum: number, payment: ChitPayment) => {
+                    return sum + (payment.is_dividend ? payment.dividend_amount : 0)
+                  }, 0)
+                  const chitWonAmount = chit.won_amount || 0
+                  const chitValue = chitDividends + chitWonAmount - chitInvested
+                  
+                  return (
+                    <div key={chit.id} className="border dark:border-gray-600 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h6 className="font-semibold text-gray-900 dark:text-white">{chit.chit_name}</h6>
+                        <div className="text-right">
+                          <div className={`text-lg font-semibold ${chitValue >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {formatCurrencyCompact(chitValue)}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Net Value</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Invested:</span>
+                          <div className="font-medium text-red-600 dark:text-red-400">-{formatCurrencyCompact(chitInvested)}</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Dividends:</span>
+                          <div className="font-medium text-green-600 dark:text-green-400">+{formatCurrencyCompact(chitDividends)}</div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-gray-400">Won:</span>
+                          <div className="font-medium text-yellow-600 dark:text-yellow-400">+{formatCurrencyCompact(chitWonAmount)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   )
