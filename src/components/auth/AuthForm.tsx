@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Card } from '../ui/Card'
+import { supabase } from '../../lib/supabase'
 
 export const AuthForm: React.FC = () => {
   const [searchParams] = useSearchParams()
@@ -15,6 +16,29 @@ export const AuthForm: React.FC = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
+
+  // Handle email confirmation when user clicks the link
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      const { data, error } = await supabase.auth.getSession()
+      
+      if (error) {
+        setError('Error confirming email: ' + error.message)
+        return
+      }
+      
+      if (data.session) {
+        setMessage('Email confirmed successfully! Redirecting...')
+        setTimeout(() => navigate('/dashboard'), 2000)
+      }
+    }
+
+    // Check if this is an auth callback (email confirmation)
+    if (searchParams.get('access_token') || searchParams.get('refresh_token')) {
+      handleAuthCallback()
+    }
+  }, [searchParams, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,11 +49,12 @@ export const AuthForm: React.FC = () => {
       if (isSignUp) {
         const { error } = await signUp(email, password)
         if (error) throw error
+        setMessage('Check your email for a confirmation link!')
       } else {
         const { error } = await signIn(email, password)
         if (error) throw error
+        navigate('/dashboard')
       }
-      navigate('/dashboard')
     } catch (error: unknown) {
       setError((error as Error).message)
     } finally {
@@ -64,6 +89,12 @@ export const AuthForm: React.FC = () => {
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                 {error}
+              </div>
+            )}
+            
+            {message && (
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                {message}
               </div>
             )}
             

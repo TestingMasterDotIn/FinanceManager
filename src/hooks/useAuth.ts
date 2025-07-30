@@ -28,9 +28,23 @@ export const useAuth = () => {
   }, [])
 
   const signUp = async (email: string, password: string) => {
+    // Get the correct redirect URL based on environment
+    const getRedirectURL = () => {
+      if (import.meta.env.PROD) {
+        // Production - use your GitHub Pages URL
+        return 'https://testingmasterdotin.github.io/FinanceManager/auth'
+      } else {
+        // Development - use localhost
+        return 'http://localhost:5173/auth'
+      }
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: getRedirectURL()
+      }
     })
     return { data, error }
   }
@@ -63,10 +77,21 @@ export const useAuth = () => {
   }
 
   const signInWithProvider = async (provider: 'google' | 'github' | 'linkedin') => {
+    // Get the correct redirect URL based on environment
+    const getRedirectURL = () => {
+      if (import.meta.env.PROD) {
+        // Production - use your GitHub Pages URL
+        return 'https://testingmasterdotin.github.io/FinanceManager/dashboard'
+      } else {
+        // Development - use localhost
+        return 'http://localhost:5173/dashboard'
+      }
+    }
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: provider,
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
+        redirectTo: getRedirectURL()
       }
     })
     return { data, error }
