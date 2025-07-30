@@ -10,7 +10,9 @@ import {
   TrashIcon,
   EyeIcon,
   FunnelIcon,
-  DocumentIcon
+  DocumentIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline'
 import { Card } from '../ui/Card'
 import { Button } from '../ui/Button'
@@ -24,10 +26,11 @@ interface PersonalExpense {
   id: string
   user_id: string
   person_name: string
+  person_type: 'family_member' | 'event'
   person_photo_url?: string | null
   amount: number
   expense_date: string
-  category: 'grocery' | 'medicine' | 'monthly_maintenance' | 'others'
+  category: 'grocery' | 'medicine' | 'monthly_maintenance' | 'others' | 'custom'
   custom_category?: string | null
   description?: string | null
   payment_screenshot_url?: string | null
@@ -35,11 +38,40 @@ interface PersonalExpense {
   updated_at: string
 }
 
+interface CustomCategory {
+  id: string
+  user_id: string
+  category_name: string
+  description?: string | null
+  color: string
+  created_at: string
+  updated_at: string
+}
+
+interface ManagedMemberEvent {
+  id: string
+  user_id: string
+  name: string
+  type: 'family_member' | 'event'
+  photo_url?: string | null
+  description?: string | null
+  created_at: string
+  updated_at: string
+}
+
 const PREDEFINED_CATEGORIES = [
   { value: 'grocery', label: 'Grocery' },
   { value: 'medicine', label: 'Medicine' },
+  { value: 'travel', label: 'Travel' },
   { value: 'monthly_maintenance', label: 'Monthly Maintenance' },
+  { value: 'Misc', label: 'Miscellaneous' },
+  { value: 'custom', label: 'Custom Category' },
   { value: 'others', label: 'Others' }
+]
+
+const PERSON_TYPES = [
+  { value: 'family_member', label: 'Family Member' },
+  { value: 'event', label: 'Event' }
 ]
 
 export const PersonalExpenses: React.FC = () => {
@@ -51,17 +83,41 @@ export const PersonalExpenses: React.FC = () => {
   const [viewingExpense, setViewingExpense] = useState<PersonalExpense | null>(null)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>([])
+  const [managedMembers, setManagedMembers] = useState<ManagedMemberEvent[]>([])
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
+  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<CustomCategory | null>(null)
+  const [editingMember, setEditingMember] = useState<ManagedMemberEvent | null>(null)
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
   // Form state
   const [formData, setFormData] = useState({
     person_name: '',
+    person_type: 'family_member' as PersonalExpense['person_type'],
     person_photo_url: '',
     amount: '',
     expense_date: '',
-    category: 'grocery' as PersonalExpense['category'],
+    category: 'grocery' as string, // Changed to string to allow custom category names
     custom_category: '',
+    selected_custom_category: '',
     description: '',
-    payment_screenshot_url: ''
+    payment_screenshot_url: '',
+    selected_member_id: ''
+  })
+
+  // Category form state
+  const [categoryFormData, setCategoryFormData] = useState({
+    category_name: '',
+    description: '',
+    color: '#3B82F6'
+  })
+
+  // Member form state
+  const [memberFormData, setMemberFormData] = useState({
+    name: '',
+    type: 'family_member' as 'family_member' | 'event',
+    photo_url: '',
+    description: ''
   })
 
   // Filter state
@@ -77,13 +133,16 @@ export const PersonalExpenses: React.FC = () => {
   const resetForm = () => {
     setFormData({
       person_name: '',
+      person_type: 'family_member',
       person_photo_url: '',
       amount: '',
       expense_date: '',
       category: 'grocery',
       custom_category: '',
+      selected_custom_category: '',
       description: '',
-      payment_screenshot_url: ''
+      payment_screenshot_url: '',
+      selected_member_id: ''
     })
   }
 
@@ -110,10 +169,16 @@ export const PersonalExpenses: React.FC = () => {
 
       // Apply filters
       if (filters.person_name) {
-        query = query.ilike('person_name', `%${filters.person_name}%`)
+        query = query.eq('person_name', filters.person_name)
       }
       if (filters.category) {
-        query = query.eq('category', filters.category)
+        // Check if it's a custom category
+        const isCustomCategory = customCategories.some(cat => cat.category_name === filters.category)
+        if (isCustomCategory) {
+          query = query.eq('category', 'custom').eq('custom_category', filters.category)
+        } else {
+          query = query.eq('category', filters.category)
+        }
       }
       if (filters.start_date) {
         query = query.gte('expense_date', filters.start_date)
@@ -135,27 +200,251 @@ export const PersonalExpenses: React.FC = () => {
     } catch (error) {
       console.error('Error fetching expenses:', error)
     }
-  }, [user, filters])
+  }, [user, filters, customCategories])
+
+  const fetchCustomCategories = useCallback(async () => {
+    if (!user) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('custom_categories')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('category_name')
+
+      if (error) throw error
+      setCustomCategories(data || [])
+    } catch (error) {
+      console.error('Error fetching custom categories:', error)
+    }
+  }, [user])
+
+  const fetchManagedMembers = useCallback(async () => {
+    if (!user) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('managed_members_events')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name')
+
+      if (error) throw error
+      setManagedMembers(data || [])
+    } catch (error) {
+      console.error('Error fetching managed members:', error)
+    }
+  }, [user])
 
   useEffect(() => {
     if (user) {
       fetchExpenses().finally(() => setLoading(false))
+      fetchCustomCategories()
+      fetchManagedMembers()
     }
-  }, [user, fetchExpenses])
+  }, [user, fetchExpenses, fetchCustomCategories, fetchManagedMembers])
+
+  const getGroupedExpenses = () => {
+    const grouped = expenses.reduce((groups, expense) => {
+      const key = expense.person_name
+      if (!groups[key]) {
+        groups[key] = {
+          person_name: expense.person_name,
+          person_type: expense.person_type || 'family_member',
+          person_photo_url: expense.person_photo_url,
+          expenses: [],
+          total_amount: 0
+        }
+      }
+      groups[key].expenses.push(expense)
+      groups[key].total_amount += expense.amount
+      return groups
+    }, {} as Record<string, {
+      person_name: string
+      person_type: 'family_member' | 'event'
+      person_photo_url?: string | null
+      expenses: PersonalExpense[]
+      total_amount: number
+    }>)
+
+    // Sort expenses within each group by date (newest first) and then sort groups by total amount
+    const groupedArray = Object.values(grouped).map(group => ({
+      ...group,
+      expenses: group.expenses.sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime())
+    }))
+
+    return groupedArray.sort((a, b) => b.total_amount - a.total_amount)
+  }
+
+  const handleCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+
+    try {
+      const categoryData = {
+        user_id: user.id,
+        category_name: categoryFormData.category_name,
+        description: categoryFormData.description || null,
+        color: categoryFormData.color
+      }
+
+      if (editingCategory) {
+        // Update existing category
+        const { error } = await supabase
+          .from('custom_categories')
+          .update(categoryData)
+          .eq('id', editingCategory.id)
+
+        if (error) throw error
+        
+        setCustomCategories(prev => prev.map(cat => 
+          cat.id === editingCategory.id ? { ...cat, ...categoryData } : cat
+        ))
+      } else {
+        // Create new category
+        const { data, error } = await supabase
+          .from('custom_categories')
+          .insert([categoryData])
+          .select()
+          .single()
+
+        if (error) throw error
+        setCustomCategories(prev => [...prev, data])
+      }
+
+      setIsCategoryModalOpen(false)
+      setEditingCategory(null)
+      setCategoryFormData({ category_name: '', description: '', color: '#3B82F6' })
+      
+      // Refresh expenses to update the display with new category
+      await fetchExpenses()
+    } catch (error) {
+      console.error('Error saving category:', error)
+      alert('Failed to save category. Please try again.')
+    }
+  }
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (!confirm('Are you sure you want to delete this category?')) return
+
+    try {
+      const { error } = await supabase
+        .from('custom_categories')
+        .delete()
+        .eq('id', categoryId)
+
+      if (error) throw error
+      
+      setCustomCategories(prev => prev.filter(cat => cat.id !== categoryId))
+    } catch (error) {
+      console.error('Error deleting category:', error)
+      alert('Failed to delete category. Please try again.')
+    }
+  }
+
+  const handleMemberSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+
+    try {
+      const memberData = {
+        user_id: user.id,
+        name: memberFormData.name,
+        type: memberFormData.type,
+        photo_url: memberFormData.photo_url || null,
+        description: memberFormData.description || null
+      }
+
+      if (editingMember) {
+        // Update existing member
+        const { error } = await supabase
+          .from('managed_members_events')
+          .update(memberData)
+          .eq('id', editingMember.id)
+
+        if (error) throw error
+        
+        setManagedMembers(prev => prev.map(member => 
+          member.id === editingMember.id ? { ...member, ...memberData } : member
+        ))
+      } else {
+        // Create new member
+        const { data, error } = await supabase
+          .from('managed_members_events')
+          .insert([memberData])
+          .select()
+          .single()
+
+        if (error) throw error
+        setManagedMembers(prev => [...prev, data])
+      }
+
+      setIsMemberModalOpen(false)
+      setEditingMember(null)
+      setMemberFormData({ name: '', type: 'family_member', photo_url: '', description: '' })
+    } catch (error) {
+      console.error('Error saving member:', error)
+      alert('Failed to save member/event. Please try again.')
+    }
+  }
+
+  const handleDeleteMember = async (memberId: string) => {
+    if (!confirm('Are you sure you want to delete this member/event?')) return
+
+    try {
+      const { error } = await supabase
+        .from('managed_members_events')
+        .delete()
+        .eq('id', memberId)
+
+      if (error) throw error
+      
+      setManagedMembers(prev => prev.filter(member => member.id !== memberId))
+    } catch (error) {
+      console.error('Error deleting member:', error)
+      alert('Failed to delete member/event. Please try again.')
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
 
     try {
+      // Get selected member details
+      const selectedMember = managedMembers.find(member => member.id === formData.selected_member_id)
+      const personName = selectedMember ? selectedMember.name : formData.person_name
+      const personType = selectedMember ? selectedMember.type : formData.person_type
+      const personPhotoUrl = selectedMember ? selectedMember.photo_url : formData.person_photo_url
+      
+      let finalCategory: PersonalExpense['category'] = 'grocery'
+      let finalCustomCategory = null
+      
+      // Check if the selected value is a custom category
+      const isCustomCategory = customCategories.some(cat => cat.category_name === formData.category)
+      if (isCustomCategory) {
+        finalCategory = 'custom'
+        finalCustomCategory = formData.category
+      } else if (formData.category === 'custom') {
+        finalCategory = 'custom'
+        finalCustomCategory = formData.selected_custom_category
+      } else if (formData.category === 'others') {
+        finalCategory = 'others'
+        finalCustomCategory = formData.custom_category
+      } else {
+        // It's a predefined category
+        finalCategory = formData.category as PersonalExpense['category']
+      }
+      
       const expenseData = {
         user_id: user.id,
-        person_name: formData.person_name,
-        person_photo_url: formData.person_photo_url || null,
+        person_name: personName,
+        person_type: personType,
+        person_photo_url: personPhotoUrl || null,
         amount: parseFloat(formData.amount),
         expense_date: formData.expense_date,
-        category: formData.category,
-        custom_category: formData.category === 'others' ? formData.custom_category : null,
+        category: finalCategory,
+        custom_category: finalCustomCategory,
         description: formData.description || null,
         payment_screenshot_url: formData.payment_screenshot_url || null
       }
@@ -195,15 +484,31 @@ export const PersonalExpenses: React.FC = () => {
 
   const handleEdit = (expense: PersonalExpense) => {
     setEditingExpense(expense)
+    
+    // Determine the category value for the form
+    let categoryValue: string = expense.category
+    if (expense.category === 'custom' && expense.custom_category) {
+      // If it's a custom category, use the custom category name directly
+      categoryValue = expense.custom_category
+    }
+    
+    // Find matching managed member
+    const matchingMember = managedMembers.find(member => 
+      member.name === expense.person_name && member.type === expense.person_type
+    )
+    
     setFormData({
       person_name: expense.person_name,
+      person_type: expense.person_type || 'family_member',
       person_photo_url: expense.person_photo_url || '',
       amount: expense.amount.toString(),
       expense_date: expense.expense_date,
-      category: expense.category,
-      custom_category: expense.custom_category || '',
+      category: categoryValue,
+      custom_category: expense.category === 'others' ? expense.custom_category || '' : '',
+      selected_custom_category: expense.category === 'custom' ? expense.custom_category || '' : '',
       description: expense.description || '',
-      payment_screenshot_url: expense.payment_screenshot_url || ''
+      payment_screenshot_url: expense.payment_screenshot_url || '',
+      selected_member_id: matchingMember ? matchingMember.id : ''
     })
     setIsFormOpen(true)
   }
@@ -235,6 +540,10 @@ export const PersonalExpenses: React.FC = () => {
   }
 
   const getCategoryDisplay = (expense: PersonalExpense) => {
+    if (expense.category === 'custom' && expense.custom_category) {
+      const customCat = customCategories.find(cat => cat.category_name === expense.custom_category)
+      return customCat ? customCat.category_name : expense.custom_category
+    }
     if (expense.category === 'others' && expense.custom_category) {
       return expense.custom_category
     }
@@ -268,6 +577,13 @@ export const PersonalExpenses: React.FC = () => {
       expenseCount: expenses.length,
       topCategory: topCategory ? { name: topCategory[0], amount: topCategory[1] } : null
     }
+  }
+
+  const toggleGroupExpansion = (groupKey: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupKey]: !prev[groupKey]
+    }))
   }
 
   const stats = getStats()
@@ -350,6 +666,32 @@ export const PersonalExpenses: React.FC = () => {
             <FunnelIcon className="h-4 w-4" />
             <span>Filter</span>
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setCategoryFormData({ category_name: '', description: '', color: '#3B82F6' })
+              setEditingCategory(null)
+              setIsCategoryModalOpen(true)
+            }}
+            className="flex items-center space-x-2"
+            title="Add/Manage Custom Categories"
+          >
+            <TagIcon className="h-4 w-4" />
+            <span>Add/Manage Categories</span>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setMemberFormData({ name: '', type: 'family_member', photo_url: '', description: '' })
+              setEditingMember(null)
+              setIsMemberModalOpen(true)
+            }}
+            className="flex items-center space-x-2"
+            title="Add/Manage Members & Events"
+          >
+            <UserIcon className="h-4 w-4" />
+            <span>Add/Manage Member/Event</span>
+          </Button>
           <Button 
             onClick={() => {
               resetForm()
@@ -376,87 +718,164 @@ export const PersonalExpenses: React.FC = () => {
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {expenses.map((expense) => (
+        <div className="grid grid-cols-1 gap-6">
+          {getGroupedExpenses().map((group, groupIndex) => (
             <motion.div
-              key={expense.id}
+              key={`${group.person_name}-${group.person_type}-${groupIndex}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Card className="p-4 bg-white dark:bg-gray-800">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4 flex-1">
+              <Card className="p-6 bg-white dark:bg-gray-800">
+                {/* Person/Event Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
                     <div className="flex-shrink-0">
-                      {expense.person_photo_url ? (
+                      {group.expenses[0].person_photo_url ? (
                         <img
-                          src={expense.person_photo_url}
-                          alt={expense.person_name}
-                          className="h-12 w-12 rounded-full object-cover"
+                          src={group.expenses[0].person_photo_url}
+                          alt={group.person_name}
+                          className="h-16 w-16 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="h-12 w-12 bg-gray-200 rounded-full flex items-center justify-center">
-                          <UserIcon className="h-6 w-6 text-gray-500 dark:text-gray-300" />
+                        <div className="h-16 w-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                          {group.person_type === 'family_member' ? (
+                            <UserIcon className="h-8 w-8 text-white" />
+                          ) : (
+                            <span className="text-2xl">🎉</span>
+                          )}
                         </div>
                       )}
                     </div>
                     
                     <div className="flex-1">
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                        {expense.person_name}
-                        {expense.payment_screenshot_url && (
-                          <DocumentIcon className="h-4 w-4 ml-2 text-green-600" title="Payment screenshot available" />
-                        )}
-                      </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm text-gray-600 dark:text-gray-300">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
+                        {group.person_name}
+                        <span className="ml-3 px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
+                          {group.person_type === 'family_member' ? 'Family Member' : 'Event'}
+                        </span>
+                      </h3>
+                      <div className="flex items-center space-x-6 mt-2 text-sm text-gray-600 dark:text-gray-300">
                         <div>
-                          <span className="font-medium">Amount:</span> {formatCurrency(expense.amount)}
+                          <span className="font-medium">Total Amount:</span> 
+                          <span className="text-lg font-bold text-green-600 dark:text-green-400 ml-2">
+                            {formatCurrency(group.total_amount)}
+                          </span>
                         </div>
                         <div>
-                          <span className="font-medium">Date:</span> {new Date(expense.expense_date).toLocaleDateString()}
+                          <span className="font-medium">Transactions:</span> {group.expenses.length}
                         </div>
-                        <div>
-                          <span className="font-medium">Category:</span> {getCategoryDisplay(expense)}
-                        </div>
-                        {expense.description && (
-                          <div className="col-span-2 md:col-span-1">
-                            <span className="font-medium">Description:</span> {expense.description.length > 30 ? expense.description.substring(0, 30) + '...' : expense.description}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-2 ml-4">
+                </div>
+
+                {/* Expenses History */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-600 pb-2">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Transaction History
+                    </h4>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setViewingExpense(expense)
-                        setIsViewModalOpen(true)
-                      }}
-                      title="View Expense Details"
+                      onClick={() => toggleGroupExpansion(`${group.person_name}-${group.person_type}`)}
+                      className="flex items-center space-x-1"
+                      title={expandedGroups[`${group.person_name}-${group.person_type}`] ? "Minimize transactions" : "Show all transactions"}
                     >
-                      <EyeIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(expense)}
-                      title="Edit Expense"
-                    >
-                      <PencilIcon className="h-4 w-4"/>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(expense)}
-                      className="text-red-600 hover:bg-red-50"
-                      title="Delete Expense"
-                    >
-                      <TrashIcon className="h-4 w-4" />
+                      {expandedGroups[`${group.person_name}-${group.person_type}`] ? (
+                        <>
+                          <ChevronUpIcon className="h-3 w-3" />
+                          <span className="text-xs">Minimize</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDownIcon className="h-3 w-3" />
+                          <span className="text-xs">Show All ({group.expenses.length})</span>
+                        </>
+                      )}
                     </Button>
                   </div>
+                  {(() => {
+                    const groupKey = `${group.person_name}-${group.person_type}`
+                    const isExpanded = expandedGroups[groupKey]
+                    const expensesToShow = isExpanded 
+                      ? group.expenses 
+                      : [] // Show no transactions when minimized
+                    
+                    return expensesToShow.map((expense, expenseIndex) => (
+                      <div key={`${expense.id}-${expenseIndex}`} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div className="flex-1">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <span className="font-medium text-gray-700 dark:text-gray-300">Amount:</span>
+                              <span className="ml-1 font-semibold text-green-600 dark:text-green-400">
+                                {formatCurrency(expense.amount)}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-700 dark:text-gray-300">Date:</span>
+                              <span className="ml-1">{new Date(expense.expense_date).toLocaleDateString()}</span>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-700 dark:text-gray-300">Category:</span>
+                              <span className="ml-1">{getCategoryDisplay(expense)}</span>
+                            </div>
+                            {expense.description && (
+                              <div>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">Note:</span>
+                                <span className="ml-1">{expense.description.length > 20 ? expense.description.substring(0, 20) + '...' : expense.description}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-1 ml-4">
+                          {expense.payment_screenshot_url && (
+                            <DocumentIcon className="h-4 w-4 text-green-600" title="Payment screenshot available" />
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setViewingExpense(expense)
+                              setIsViewModalOpen(true)
+                            }}
+                            title="View Details"
+                          >
+                            <EyeIcon className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(expense)}
+                            title="Edit"
+                          >
+                            <PencilIcon className="h-3 w-3"/>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(expense)}
+                            className="text-red-600 hover:bg-red-50"
+                            title="Delete"
+                          >
+                            <TrashIcon className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  })()}
+                  {/* {(() => {
+                    const groupKey = `${group.person_name}-${group.person_type}`
+                    return !expandedGroups[groupKey] && group.expenses.length > 0 && (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {group.expenses.length} transaction{group.expenses.length > 1 ? 's' : ''} hidden. Click "Show All" to view.
+                        </p>
+                      </div>
+                    )
+                  })()} */}
                 </div>
               </Card>
             </motion.div>
@@ -475,19 +894,70 @@ export const PersonalExpenses: React.FC = () => {
         title={editingExpense ? 'Edit Expense' : 'Add New Expense'}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Helpful hints */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+            <p className="text-sm text-blue-700 dark:text-blue-300 flex items-start">
+              <span className="text-blue-500 mr-2">💡</span>
+              <span>You can add expenses for family members or events like House Warming, Birthday parties, Weddings, Trips, etc. Choose an existing person to group all their expenses together! You can also create custom categories using the "Categories" button above.</span>
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Person Name *
+                Type *
               </label>
-              <Input
-                type="text"
-                value={formData.person_name}
-                onChange={(e) => setFormData({...formData, person_name: e.target.value})}
-                placeholder="Enter person's name"
+              <Select
+                value={formData.person_type}
+                onChange={(e) => setFormData({...formData, person_type: e.target.value as 'family_member' | 'event'})}
+                options={PERSON_TYPES}
                 required
               />
+            </div> */}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Select Member/Event
+              </label>
+              <Select
+                value={formData.selected_member_id}
+                onChange={(e) => {
+                  const memberId = e.target.value
+                  const selectedMember = managedMembers.find(member => member.id === memberId)
+                  setFormData({
+                    ...formData, 
+                    selected_member_id: memberId,
+                    person_name: selectedMember ? selectedMember.name : '',
+                    person_type: selectedMember ? selectedMember.type : 'family_member',
+                    person_photo_url: selectedMember ? selectedMember.photo_url || '' : ''
+                  })
+                }}
+                options={[
+                  // { value: '', label: 'Select Member/Event or Create New...' },
+                  ...managedMembers.map(member => ({ 
+                    value: member.id, 
+                    label: `${member.name} (${member.type === 'family_member' ? 'Family' : 'Event'})` 
+                  }))
+                ]}
+              />
             </div>
+
+            {/* {!formData.selected_member_id && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {formData.person_type === 'family_member' ? 'Family Member Name' : 'Event Name'} *
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.person_name}
+                    onChange={(e) => setFormData({...formData, person_name: e.target.value})}
+                    placeholder={formData.person_type === 'family_member' ? 'Enter family member name' : 'e.g., House Warming, Birthday Party, Wedding'}
+                    required
+                  />
+                </div>
+              </>
+            )} */}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -520,9 +990,30 @@ export const PersonalExpenses: React.FC = () => {
                 Category *
               </label>
               <Select
-                value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value as PersonalExpense['category']})}
-                options={PREDEFINED_CATEGORIES}
+                value={formData.category === 'custom' ? formData.selected_custom_category : formData.category}
+                onChange={(e) => {
+                  const value = e.target.value
+                  // Check if it's a custom category
+                  const isCustomCategory = customCategories.some(cat => cat.category_name === value)
+                  if (isCustomCategory) {
+                    setFormData({
+                      ...formData, 
+                      category: value,
+                      selected_custom_category: value
+                    })
+                  } else {
+                    setFormData({
+                      ...formData, 
+                      category: value,
+                      selected_custom_category: ''
+                    })
+                  }
+                }}
+                options={[
+                  ...PREDEFINED_CATEGORIES.filter(cat => cat.value !== 'custom' && cat.value !== 'others'),
+                  ...customCategories.map(cat => ({ value: cat.category_name, label: `${cat.category_name} (Custom)` })),
+                  { value: 'others', label: 'Others' }
+                ]}
                 required
               />
             </div>
@@ -702,12 +1193,17 @@ export const PersonalExpenses: React.FC = () => {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Person Name</label>
-              <Input
-                type="text"
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Person/Event</label>
+              <Select
                 value={filters.person_name}
                 onChange={(e) => setFilters({...filters, person_name: e.target.value})}
-                placeholder="Search by person name"
+                options={[
+                  { value: '', label: 'All Persons/Events' },
+                  ...managedMembers.map(member => ({ 
+                    value: member.name, 
+                    label: `${member.name} (${member.type === 'family_member' ? 'Family' : 'Event'})` 
+                  }))
+                ]}
               />
             </div>
 
@@ -718,7 +1214,8 @@ export const PersonalExpenses: React.FC = () => {
                 onChange={(e) => setFilters({...filters, category: e.target.value})}
                 options={[
                   { value: '', label: 'All Categories' },
-                  ...PREDEFINED_CATEGORIES
+                  ...PREDEFINED_CATEGORIES.filter(cat => cat.value !== 'custom'),
+                  ...customCategories.map(cat => ({ value: cat.category_name, label: `${cat.category_name} (Custom)` }))
                 ]}
               />
             </div>
@@ -788,6 +1285,303 @@ export const PersonalExpenses: React.FC = () => {
               Apply Filters
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Custom Category Management Modal */}
+      <Modal
+        isOpen={isCategoryModalOpen}
+        onClose={() => {
+          setIsCategoryModalOpen(false)
+          setEditingCategory(null)
+          setCategoryFormData({ category_name: '', description: '', color: '#3B82F6' })
+        }}
+        title={editingCategory ? 'Edit Category' : 'Manage Custom Categories'}
+      >
+        <div className="space-y-6">
+          {/* Add/Edit Category Form */}
+          <form onSubmit={handleCategorySubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Category Name *
+                </label>
+                <Input
+                  type="text"
+                  value={categoryFormData.category_name}
+                  onChange={(e) => setCategoryFormData({...categoryFormData, category_name: e.target.value})}
+                  placeholder="Enter category name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Color
+                </label>
+                <Input
+                  type="color"
+                  value={categoryFormData.color}
+                  onChange={(e) => setCategoryFormData({...categoryFormData, color: e.target.value})}
+                  className="h-10"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Description (Optional)
+              </label>
+              <textarea
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                value={categoryFormData.description}
+                onChange={(e) => setCategoryFormData({...categoryFormData, description: e.target.value})}
+                placeholder="Brief description of this category..."
+              />
+            </div>
+
+            <div className="flex space-x-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setEditingCategory(null)
+                  setCategoryFormData({ category_name: '', description: '', color: '#3B82F6' })
+                }}
+                className="flex-1"
+              >
+                {editingCategory ? 'Cancel Edit' : 'Clear'}
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1"
+              >
+                {editingCategory ? 'Update Category' : 'Add Category'}
+              </Button>
+            </div>
+          </form>
+
+          {/* Existing Categories List */}
+          {customCategories.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Your Custom Categories</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {customCategories.map((category) => (
+                  <div key={category.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div 
+                        className="w-4 h-4 rounded-full" 
+                        style={{ backgroundColor: category.color }}
+                      ></div>
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">{category.category_name}</p>
+                        {category.description && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300">{category.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex space-x-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingCategory(category)
+                          setCategoryFormData({
+                            category_name: category.category_name,
+                            description: category.description || '',
+                            color: category.color
+                          })
+                        }}
+                        title="Edit Category"
+                      >
+                        <PencilIcon className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteCategory(category.id)}
+                        className="text-red-600 hover:bg-red-50"
+                        title="Delete Category"
+                      >
+                        <TrashIcon className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {customCategories.length === 0 && !editingCategory && (
+            <div className="text-center py-6">
+              <TagIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Custom Categories Yet</h3>
+              <p className="text-gray-600 dark:text-gray-300">Create your first custom category to organize your expenses better.</p>
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Member/Event Management Modal */}
+      <Modal
+        isOpen={isMemberModalOpen}
+        onClose={() => {
+          setIsMemberModalOpen(false)
+          setEditingMember(null)
+          setMemberFormData({ name: '', type: 'family_member', photo_url: '', description: '' })
+        }}
+        title={editingMember ? 'Edit Member/Event' : 'Manage Members & Events'}
+      >
+        <div className="space-y-6">
+          {/* Add/Edit Member Form */}
+          <form onSubmit={handleMemberSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Name *
+                </label>
+                <Input
+                  type="text"
+                  value={memberFormData.name}
+                  onChange={(e) => setMemberFormData({...memberFormData, name: e.target.value})}
+                  placeholder="Enter name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Type *
+                </label>
+                <Select
+                  value={memberFormData.type}
+                  onChange={(e) => setMemberFormData({...memberFormData, type: e.target.value as 'family_member' | 'event'})}
+                  options={PERSON_TYPES}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Photo URL (Optional)
+              </label>
+              <Input
+                type="url"
+                value={memberFormData.photo_url}
+                onChange={(e) => setMemberFormData({...memberFormData, photo_url: e.target.value})}
+                placeholder="https://example.com/photo.jpg"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Description (Optional)
+              </label>
+              <textarea
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                value={memberFormData.description}
+                onChange={(e) => setMemberFormData({...memberFormData, description: e.target.value})}
+                placeholder="Brief description..."
+              />
+            </div>
+
+            <div className="flex space-x-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setEditingMember(null)
+                  setMemberFormData({ name: '', type: 'family_member', photo_url: '', description: '' })
+                }}
+                className="flex-1"
+              >
+                {editingMember ? 'Cancel Edit' : 'Clear'}
+              </Button>
+              <Button 
+                type="submit" 
+                className="flex-1"
+              >
+                {editingMember ? 'Update Member/Event' : 'Add Member/Event'}
+              </Button>
+            </div>
+          </form>
+
+          {/* Existing Members List */}
+          {managedMembers.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Your Members & Events</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {managedMembers.map((member) => (
+                  <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      {member.photo_url ? (
+                        <img
+                          src={member.photo_url}
+                          alt={member.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                          {member.type === 'family_member' ? (
+                            <UserIcon className="h-5 w-5 text-white" />
+                          ) : (
+                            <span className="text-sm">🎉</span>
+                          )}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">{member.name}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          {member.type === 'family_member' ? 'Family Member' : 'Event'}
+                        </p>
+                        {member.description && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{member.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex space-x-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingMember(member)
+                          setMemberFormData({
+                            name: member.name,
+                            type: member.type,
+                            photo_url: member.photo_url || '',
+                            description: member.description || ''
+                          })
+                        }}
+                        title="Edit Member/Event"
+                      >
+                        <PencilIcon className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteMember(member.id)}
+                        className="text-red-600 hover:bg-red-50"
+                        title="Delete Member/Event"
+                      >
+                        <TrashIcon className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {managedMembers.length === 0 && !editingMember && (
+            <div className="text-center py-6">
+              <UserIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Members or Events Yet</h3>
+              <p className="text-gray-600 dark:text-gray-300">Create your first member or event to easily track expenses.</p>
+            </div>
+          )}
         </div>
       </Modal>
     </div>
