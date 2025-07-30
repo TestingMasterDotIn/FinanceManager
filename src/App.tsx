@@ -33,7 +33,8 @@ const App: React.FC = () => {
     PROD: import.meta.env.PROD,
     DEV: import.meta.env.DEV,
     MODE: import.meta.env.MODE,
-    basename
+    basename,
+    supabaseConfigured: !!import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'https://your-project.supabase.co'
   })
   
   return (

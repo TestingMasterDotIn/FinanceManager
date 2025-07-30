@@ -36,11 +36,25 @@ export const useAuth = () => {
   }
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    return { data, error }
+    try {
+      console.log('Attempting sign in...')
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      
+      if (error) {
+        console.error('Supabase auth error:', error)
+      } else {
+        console.log('Sign in successful')
+      }
+      
+      return { data, error }
+    } catch (error) {
+      console.error('Network/fetch error during sign in:', error)
+      // Re-throw the error so it can be handled by the component
+      throw error
+    }
   }
 
   const signOut = async () => {
