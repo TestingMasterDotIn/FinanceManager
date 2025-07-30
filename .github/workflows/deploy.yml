@@ -21,27 +21,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
-
-      - name: Restore cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
+          node-version: '18'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: Build with Vite
-        run: bun run build
+        run: npm run build
         env:
           NODE_ENV: production
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # VITE_CIBIL_API_URL: ${{ secrets.VITE_CIBIL_API_URL }}
+          # VITE_CIBIL_API_KEY: ${{ secrets.VITE_CIBIL_API_KEY }}
+          # VITE_EXPERIAN_API_URL: ${{ secrets.VITE_EXPERIAN_API_URL }}
+          # VITE_EXPERIAN_API_KEY: ${{ secrets.VITE_EXPERIAN_API_KEY }}
+          # VITE_EQUIFAX_API_URL: ${{ secrets.VITE_EQUIFAX_API_URL }}
+          # VITE_EQUIFAX_API_KEY: ${{ secrets.VITE_EQUIFAX_API_KEY }}
+          # VITE_ENABLE_CREDIT_SCORE_SIMULATION: true
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
