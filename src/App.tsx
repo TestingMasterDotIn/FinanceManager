@@ -25,9 +25,20 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 }
 
 const App: React.FC = () => {
+  // Get basename for GitHub Pages deployment
+  const basename = import.meta.env.PROD ? '/FinanceManager' : ''
+  
+  // Debug logging
+  console.log('Environment:', {
+    PROD: import.meta.env.PROD,
+    DEV: import.meta.env.DEV,
+    MODE: import.meta.env.MODE,
+    basename
+  })
+  
   return (
     <ThemeProvider>
-      <Router>
+      <Router basename={basename}>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
           <Navbar />
           <Routes>
@@ -41,6 +52,8 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               } 
             />
+            {/* Catch-all route for debugging */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </Router>
